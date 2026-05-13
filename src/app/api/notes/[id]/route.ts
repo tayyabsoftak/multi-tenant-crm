@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isOrgAdmin } from "@/lib/permissions";
-import { softDeleteNote } from "@/lib/services/notes.service";
+import { softDeleteNote } from "@/lib/services/NoteService";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

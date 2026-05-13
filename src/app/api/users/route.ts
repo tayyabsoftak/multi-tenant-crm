@@ -4,15 +4,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { isOrgAdmin } from "@/lib/permissions";
-import { createUserInOrg, listUsersInOrg } from "@/lib/services/users.service";
+import { createUserInOrg, listUsersInOrg } from "@/lib/services/UserService";
 import { prisma } from "@/lib/db";
 
-const inviteSchema = z.object({
-  name: z.string().min(2).max(120),
-  email: z.string().email(),
-  password: z.string().min(8).max(128),
-  role: z.enum(["ADMIN", "USER"]),
-});
+import { inviteUserSchema } from "@/lib/validations/UserSchema";
 
 export async function GET(): Promise<NextResponse> {
   const session = await getServerSession(authOptions);
@@ -53,7 +48,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const body = await request.json();
-  const parsed = inviteSchema.safeParse(body);
+  const parsed = inviteUserSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }

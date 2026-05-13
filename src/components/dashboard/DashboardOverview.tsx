@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ActivityActions } from "@/lib/constants/crm";
 import { isOrgAdmin } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
+import { cn, formatActivityLabel } from "@/lib/utils";
 
 export type ActivityRow = {
   id: string;
@@ -34,30 +34,6 @@ interface Summary {
   };
   recentActivities: ActivityRow[];
   topAssignees: { userId: string; name: string; count: number }[];
-}
-
-function getActivityLabel(row: ActivityRow): string {
-  const actor = row.actor?.name ?? "Someone";
-  const meta = (row.metadata ?? {}) as Record<string, string>;
-  const customer = row.customer?.name ?? meta.customerName ?? "customer";
-  switch (row.action) {
-    case ActivityActions.CUSTOMER_CREATED:
-      return `${actor} created ${customer}`;
-    case ActivityActions.CUSTOMER_UPDATED:
-      return `${actor} updated ${customer}`;
-    case ActivityActions.CUSTOMER_DELETED:
-      return `${actor} deleted ${customer}`;
-    case ActivityActions.CUSTOMER_RESTORED:
-      return `${actor} restored ${customer}`;
-    case ActivityActions.CUSTOMER_ASSIGNED:
-      return `${actor} assigned ${customer} to ${meta.assigneeName ?? "user"}`;
-    case ActivityActions.CUSTOMER_UNASSIGNED:
-      return `${actor} unassigned ${customer}`;
-    case ActivityActions.NOTE_ADDED:
-      return `${actor} added a note on ${customer}`;
-    default:
-      return `${actor} · ${row.action}`;
-  }
 }
 
 function StatCard({
@@ -143,7 +119,7 @@ export function DashboardOverview(): React.JSX.Element {
             value={data?.stats.teamMembers ?? "—"}
             loading={loading}
           />
-       }
+        }
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -172,7 +148,9 @@ export function DashboardOverview(): React.JSX.Element {
                       <li key={row.id} className="flex gap-3 text-sm">
                         <AppAvatar name={row.actor?.name} email={row.actor?.email} className="size-9" />
                         <div className="min-w-0 flex-1">
-                          <p className="leading-snug text-foreground">{getActivityLabel(row)}</p>
+                          <p className="leading-snug text-foreground">
+                            {formatActivityLabel(row.action, row.actor?.name, row.customer?.name, row.metadata)}
+                          </p>
                           <p className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(row.createdAt), { addSuffix: true })}
                             {row.customer && !row.customer.deletedAt ? (

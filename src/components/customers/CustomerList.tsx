@@ -41,7 +41,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { MAX_ACTIVE_ASSIGNMENTS_PER_USER } from "@/lib/constants/crm";
 import { isOrgAdmin } from "@/lib/permissions";
-import { createCustomerSchema, updateCustomerSchema } from "@/lib/validations/customer";
+import { createCustomerSchema, updateCustomerSchema } from "@/lib/validations/CustomerSchema";
 import { useDebounce } from "@/hooks/useDebounce";
 import type { CustomerRow } from "@/types";
 

@@ -2,8 +2,8 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isOrgAdmin } from "@/lib/permissions";
-import { listActivities } from "@/lib/services/activity-log.service";
-import { getDashboardStats, getTopAssignees } from "@/lib/services/customer-service";
+import { listActivities } from "@/lib/services/ActivityService";
+import { getDashboardStats, getTopAssignees } from "@/lib/services/CustomerService";
 
 export async function GET(): Promise<NextResponse> {
   const session = await getServerSession(authOptions);

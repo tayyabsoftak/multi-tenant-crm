@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
-import { registerBodySchema } from "@/lib/validations/auth";
+import { registerBodySchema } from "@/lib/validations/AuthSchema";
 
 export async function POST(request: Request): Promise<NextResponse> {
   let json: unknown;

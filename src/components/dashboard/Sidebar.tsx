@@ -16,14 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { isOrgAdmin } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
-
-function initials(name: string | null | undefined, email: string | null | undefined): string {
-  const n = (name ?? email ?? "?").trim();
-  const parts = n.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return n.slice(0, 2).toUpperCase();
-}
+import { cn, getInitials } from "@/lib/utils";
 
 export function Sidebar({
   onNavigate,
@@ -50,7 +43,7 @@ export function Sidebar({
         {/* User Profile Section */}
         <div className="flex items-center gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-400 text-sm font-bold text-black ring-1 ring-amber-400/20">
-            {initials(data?.user?.name, data?.user?.email).charAt(0)}
+            {getInitials(data?.user?.name, data?.user?.email).charAt(0)}
           </div>
           <div className="min-w-0 flex-1 overflow-hidden text-left">
             <div className="truncate text-sm font-medium text-foreground">

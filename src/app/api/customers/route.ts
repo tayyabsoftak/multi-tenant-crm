@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
-import { createCustomerForOrg, listCustomersForOrg } from "@/lib/services/customer-service";
-import { createCustomerSchema } from "@/lib/validations/customer";
+import { createCustomerForOrg, listCustomersForOrg } from "@/lib/services/CustomerService";
+import { createCustomerSchema } from "@/lib/validations/CustomerSchema";
 import { isOrgAdmin } from "@/lib/permissions";
 
 function parseBool(v: string | null): boolean {

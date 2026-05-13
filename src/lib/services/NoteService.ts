@@ -1,5 +1,5 @@
 import { ActivityActions } from "@/lib/constants/crm";
-import { logActivity } from "@/lib/services/activity-log.service";
+import { logActivity } from "@/lib/services/ActivityService";
 import { prisma } from "@/lib/db";
 
 export async function listNotesForCustomer(organizationId: string, customerId: string) {

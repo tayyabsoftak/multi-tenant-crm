@@ -1,8 +1,8 @@
 import { Prisma } from "@prisma/client";
 
 import { ActivityActions, MAX_ACTIVE_ASSIGNMENTS_PER_USER } from "@/lib/constants/crm";
-import type { CreateCustomerInput, UpdateCustomerInput } from "@/lib/validations/customer";
-import { logActivity } from "@/lib/services/activity-log.service";
+import type { CreateCustomerInput, UpdateCustomerInput } from "@/lib/validations/CustomerSchema";
+import { logActivity } from "@/lib/services/ActivityService";
 import { prisma } from "@/lib/db";
 
 export type CustomerStatusFilter = "all" | "active" | "unassigned" | "deleted";

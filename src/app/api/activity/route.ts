@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isOrgAdmin } from "@/lib/permissions";
-import { listActivities } from "@/lib/services/activity-log.service";
+import { listActivities } from "@/lib/services/ActivityService";
 
 export async function GET(request: Request): Promise<NextResponse> {
   const session = await getServerSession(authOptions);

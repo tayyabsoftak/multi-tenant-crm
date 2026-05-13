@@ -3,12 +3,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { isOrgAdmin } from "@/lib/permissions";
-import { createNote, listNotesForCustomer } from "@/lib/services/notes.service";
-import { getCustomerById } from "@/lib/services/customer-service";
+import { createNote, listNotesForCustomer } from "@/lib/services/NoteService";
+import { getCustomerById } from "@/lib/services/CustomerService";
 
-const createSchema = z.object({
-  content: z.string().min(1).max(5000),
-});
+import { createNoteSchema } from "@/lib/validations/NoteSchema";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -43,7 +41,7 @@ export async function POST(request: Request, context: RouteContext): Promise<Nex
     return NextResponse.json({ error: "Customer not found" }, { status: 404 });
   }
   const body = await request.json();
-  const parsed = createSchema.safeParse(body);
+  const parsed = createNoteSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }

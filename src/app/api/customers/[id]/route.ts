@@ -7,8 +7,8 @@ import {
   getCustomerCounts,
   softDeleteCustomer,
   updateCustomerForOrg,
-} from "@/lib/services/customer-service";
-import { updateCustomerSchema } from "@/lib/validations/customer";
+} from "@/lib/services/CustomerService";
+import { updateCustomerSchema } from "@/lib/validations/CustomerSchema";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

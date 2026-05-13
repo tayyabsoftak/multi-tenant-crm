@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { ActivityActions } from "@/lib/constants/crm";
 import { isOrgAdmin } from "@/lib/permissions";
+import { formatActivityLabel } from "@/lib/utils";
 
 interface ActivityItem {
   id: string;
@@ -30,22 +31,6 @@ interface ActivityItem {
   metadata: unknown;
   actor: { id: string; name: string; email: string } | null;
   customer: { id: string; name: string; deletedAt: string | null } | null;
-}
-
-function getActivityLabel(row: ActivityItem): string {
-  const actor = row.actor?.name ?? "Someone";
-  const meta = (row.metadata ?? {}) as Record<string, string>;
-  const customer = row.customer?.name ?? meta.customerName ?? "record";
-  switch (row.action) {
-    case ActivityActions.CUSTOMER_CREATED:
-      return `${actor} created customer ${customer}`;
-    case ActivityActions.CUSTOMER_ASSIGNED:
-      return `${actor} assigned ${customer} to ${meta.assigneeName ?? "user"}`;
-    case ActivityActions.NOTE_ADDED:
-      return `${actor} added a note on ${customer}`;
-    default:
-      return `${actor} · ${row.action}`;
-  }
 }
 
 export function ActivityDashboard(): React.JSX.Element {
@@ -115,7 +100,7 @@ export function ActivityDashboard(): React.JSX.Element {
     const header = ["time", "description"];
     const lines = items.map((row) => [
       format(new Date(row.createdAt), "yyyy-MM-dd HH:mm:ss"),
-      getActivityLabel(row).replaceAll('"', '""'),
+      formatActivityLabel(row.action, row.actor?.name, row.customer?.name, row.metadata).replaceAll('"', '""'),
     ]);
     const csv = [header.join(","), ...lines.map((l) => l.map((c) => `"${c}"`).join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -212,7 +197,9 @@ export function ActivityDashboard(): React.JSX.Element {
               <div key={row.id} className="flex gap-3 border-b pb-4 last:border-0 last:pb-0">
                 <AppAvatar name={row.actor?.name} email={row.actor?.email} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm leading-snug">{getActivityLabel(row)}</p>
+                  <p className="text-sm leading-snug">
+                    {formatActivityLabel(row.action, row.actor?.name, row.customer?.name, row.metadata)}
+                  </p>
                   <p
                     className="mt-1 text-xs text-muted-foreground"
                     title={format(new Date(row.createdAt), "PPpp")}

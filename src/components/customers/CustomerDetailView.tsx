@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ActivityActions } from "@/lib/constants/crm";
 import { isOrgAdmin } from "@/lib/permissions";
+import { cn, formatActivityLabel } from "@/lib/utils";
 
 interface ActivityItem {
   id: string;
@@ -121,20 +122,6 @@ export function CustomerDetailView({ id }: { id: string }): React.JSX.Element {
   const deleted = !!customer.deletedAt;
   const assigned = !!customer.assigneeId && !deleted;
 
-  function getActivityLine(row: ActivityItem, customerName: string): string {
-    const actor = row.actor?.name ?? "Someone";
-    const meta = (row.metadata ?? {}) as Record<string, string>;
-    switch (row.action) {
-      case ActivityActions.CUSTOMER_CREATED:
-        return `${actor} created ${customerName}`;
-      case ActivityActions.CUSTOMER_ASSIGNED:
-        return `${actor} assigned ${customerName} to ${meta.assigneeName ?? "user"}`;
-      case ActivityActions.NOTE_ADDED:
-        return `${actor} added a note on ${customerName}`;
-      default:
-        return `${actor} · ${row.action}`;
-    }
-  }
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
@@ -255,7 +242,7 @@ export function CustomerDetailView({ id }: { id: string }): React.JSX.Element {
                 <div key={row.id} className="flex gap-3 border-b pb-3 text-sm last:border-0 last:pb-0">
                   <AppAvatar name={row.actor?.name} email={row.actor?.email} className="size-8" />
                   <div>
-                    <p>{getActivityLine(row, customer.name)}</p>
+                    <p>{formatActivityLabel(row.action, row.actor?.name, customer.name, row.metadata)}</p>
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(row.createdAt), { addSuffix: true })}
                     </p>

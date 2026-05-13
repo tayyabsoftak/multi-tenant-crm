@@ -1,8 +1,7 @@
 import { z } from "zod";
 
 export const createNoteSchema = z.object({
-  customerId: z.string(),
-  content: z.string().min(2).max(2000),
+  content: z.string().min(1, "Note content cannot be empty").max(5000, "Note too long"),
 });
 
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;

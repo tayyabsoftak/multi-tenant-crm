@@ -5,10 +5,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/db";
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-});
+import { loginSchema } from "@/lib/validations/AuthSchema";
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
