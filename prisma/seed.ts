@@ -6,56 +6,84 @@ const prisma = new PrismaClient();
 async function main(): Promise<void> {
   const passwordHash = await bcrypt.hash("Password123", 10);
 
-  const org = await prisma.organization.upsert({
-    where: { id: "seed-org-id" },
-    update: {},
-    create: {
-      id: "seed-org-id",
-      name: "Acme Org",
+  // 1. Create Organization
+  const org = await prisma.organization.create({
+    data: {
+      name: "CRM App Solutions",
     },
   });
 
-  await prisma.user.upsert({
-    where: { id: "seed-admin-id" },
-    update: { passwordHash, name: "Acme Admin", role: UserRole.ADMIN, organizationId: org.id },
-    create: {
-      id: "seed-admin-id",
+  console.log(`Created organization: ${org.name} (${org.id})`);
+
+  // 2. Create Admin User
+  const admin = await prisma.user.create({
+    data: {
       organizationId: org.id,
-      email: "admin@example.com",
-      name: "Acme Admin",
+      email: "admin@crmapp.com",
+      name: "Admin User",
       passwordHash,
       role: UserRole.ADMIN,
     },
   });
 
-  const member = await prisma.user.upsert({
-    where: { id: "seed-member-id" },
-    update: { passwordHash, name: "Acme Member", role: UserRole.USER, organizationId: org.id },
-    create: {
-      id: "seed-member-id",
+  console.log(`Created admin: ${admin.email}`);
+
+  // 3. Create Member User
+  const sara = await prisma.user.create({
+    data: {
       organizationId: org.id,
-      email: "member@example.com",
-      name: "Acme Member",
+      email: "sara@crmapp.com",
+      name: "Sara Member",
       passwordHash,
       role: UserRole.USER,
     },
   });
 
-  await prisma.customer.upsert({
-    where: { id: "seed-customer-id" },
-    update: {
-      name: "Seed Customer",
-      email: "customer@example.com",
-      assigneeId: member.id,
-    },
-    create: {
-      id: "seed-customer-id",
+  console.log(`Created member: ${sara.email}`);
+
+  // 4. Create Customers
+  const customer1 = await prisma.customer.create({
+    data: {
       organizationId: org.id,
-      name: "Seed Customer",
-      email: "customer@example.com",
-      assigneeId: member.id,
+      name: "Global Tech Inc",
+      email: "contact@globaltech.com",
+      phone: "+1-555-0199",
+      assigneeId: sara.id,
     },
   });
+
+  const customer2 = await prisma.customer.create({
+    data: {
+      organizationId: org.id,
+      name: "Summit Logistics",
+      email: "ops@summit.io",
+      phone: "+1-555-0244",
+      assigneeId: sara.id,
+    },
+  });
+
+  console.log(`Created customers: ${customer1.name}, ${customer2.name}`);
+
+  // 5. Create Notes
+  await prisma.note.create({
+    data: {
+      organizationId: org.id,
+      customerId: customer1.id,
+      authorId: sara.id,
+      content: "Initial contact made. They are interested in our premium support package.",
+    },
+  });
+
+  await prisma.note.create({
+    data: {
+      organizationId: org.id,
+      customerId: customer2.id,
+      authorId: admin.id,
+      content: "Strategic account move. Needs high-priority attention.",
+    },
+  });
+
+  console.log("Seed data created successfully!");
 }
 
 void main()

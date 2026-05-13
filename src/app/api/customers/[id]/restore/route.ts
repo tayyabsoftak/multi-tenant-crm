@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { isOrgAdmin } from "@/lib/permissions";
-import { restoreCustomer } from "@/lib/services/customer-service";
+import { restoreCustomer } from "@/lib/services/CustomerService";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { isOrgAdmin } from "@/lib/permissions";
-import { assignCustomer, unassignCustomer } from "@/lib/services/customer-service";
+import { assignCustomer, unassignCustomer } from "@/lib/services/CustomerService";
 
 const bodySchema = z.object({
   userId: z.string().nullable(),

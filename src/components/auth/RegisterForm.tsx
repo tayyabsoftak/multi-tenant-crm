@@ -2,8 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import Link from "next/link";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -11,7 +11,6 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -232,18 +231,6 @@ export function RegisterForm(): React.JSX.Element {
           {form.formState.errors.confirmPassword ? (
             <p className="text-xs text-destructive">{form.formState.errors.confirmPassword.message}</p>
           ) : null}
-        </div>
-
-        <div className="flex items-start gap-2 pt-1">
-          <Checkbox
-            id="register-terms"
-            checked={!!form.watch("acceptTerms")}
-            onCheckedChange={(checked) => form.setValue("acceptTerms", checked === true)}
-            className="mt-0.5"
-          />
-          <Label htmlFor="register-terms" className="cursor-pointer text-sm font-normal leading-snug text-muted-foreground">
-            I agree to the terms of service (optional).
-          </Label>
         </div>
 
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>

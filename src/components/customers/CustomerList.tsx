@@ -2,10 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formatDistanceToNow } from "date-fns";
-import { ExternalLink, MessageSquare, Pencil, Trash2, UserPlus, RotateCcw } from "lucide-react";
+import { ExternalLink, MessageSquare, Pencil, RotateCcw, Trash2, UserPlus } from "lucide-react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { toast } from "sonner";
@@ -15,7 +15,6 @@ import ConfirmDialog from "@/components/common/ConfirmDialog";
 import { PaginationBar } from "@/components/common/Pagination";
 import { SearchInput } from "@/components/common/SearchInput";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { AppAvatar } from "@/components/common/AppAvatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -39,10 +38,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { useDebounce } from "@/hooks/useDebounce";
 import { MAX_ACTIVE_ASSIGNMENTS_PER_USER } from "@/lib/constants/crm";
 import { isOrgAdmin } from "@/lib/permissions";
 import { createCustomerSchema, updateCustomerSchema } from "@/lib/validations/CustomerSchema";
-import { useDebounce } from "@/hooks/useDebounce";
 import type { CustomerRow } from "@/types";
 
 type StatusFilter = "all" | "active" | "unassigned" | "deleted";
@@ -183,23 +182,6 @@ export function CustomerList(): React.JSX.Element {
             isLoading={search !== debouncedSearch}
             className="sm:flex-1"
           />
-          <Select
-            value={status}
-            onValueChange={(v) => {
-              setStatus(v as StatusFilter);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All customers</SelectItem>
-              <SelectItem value="active">Active (assigned)</SelectItem>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              {admin ? <SelectItem value="deleted">Deleted</SelectItem> : null}
-            </SelectContent>
-          </Select>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           {admin ? (
@@ -219,7 +201,6 @@ export function CustomerList(): React.JSX.Element {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[44px]" />
                 <TableHead>
                   <button type="button" className="font-semibold hover:underline" onClick={() => toggleSort("name")}>
                     Name {sortBy === "name" ? (sortDir === "asc" ? "↑" : "↓") : ""}
@@ -241,21 +222,21 @@ export function CustomerList(): React.JSX.Element {
                   </button>
                 </TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell colSpan={7}>
+                    <TableCell colSpan={6}>
                       <Skeleton className="h-10 w-full" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-16 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
                     No customers match your filters.
                   </TableCell>
                 </TableRow>
@@ -265,9 +246,6 @@ export function CustomerList(): React.JSX.Element {
                   const assigned = !!row.assigneeId && !deleted;
                   return (
                     <TableRow key={row.id} data-state={deleted ? "muted" : undefined}>
-                      <TableCell>
-                        <AppAvatar name={row.name} email={row.email} className="size-8" />
-                      </TableCell>
                       <TableCell className="font-medium">
                         <Link href={`/dashboard/customers/${row.id}`} className="hover:underline">
                           {row.name}
@@ -291,8 +269,8 @@ export function CustomerList(): React.JSX.Element {
                           <StatusBadge variant="unassigned">Unassigned</StatusBadge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
+                      <TableCell>
+                        <div className="flex gap-1">
                           <Button variant="ghost" size="icon" asChild title="View">
                             <Link href={`/dashboard/customers/${row.id}`}>
                               <ExternalLink className="size-4" />

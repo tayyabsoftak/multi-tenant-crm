@@ -8,9 +8,9 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { AppAvatar } from "@/components/common/AppAvatar";
 import { FullPageSpinner } from "@/components/common/LoadingSpinner";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { AppAvatar } from "@/components/common/AppAvatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -81,9 +81,9 @@ export function TeamManagement(): React.JSX.Element {
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Team Management</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Team</h2>
           <p className="text-sm text-muted-foreground">
-            Manage users in your organization. Admins can create new team members.
+            All members of your organization
           </p>
         </div>
         {admin ? (
