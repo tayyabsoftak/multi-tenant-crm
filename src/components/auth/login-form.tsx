@@ -97,7 +97,7 @@ export function LoginForm(): React.JSX.Element {
             id="login-email"
             type="email"
             autoComplete="email"
-            placeholder="you@company.com"
+            placeholder="Enter email address"
             className={cn(form.formState.errors.email && "border-destructive focus-visible:ring-destructive")}
             {...form.register("email")}
           />
@@ -113,7 +113,7 @@ export function LoginForm(): React.JSX.Element {
               id="login-password"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
-              placeholder="••••••••"
+              placeholder="Enter password"
               className={cn("pr-10", form.formState.errors.password && "border-destructive focus-visible:ring-destructive")}
               {...form.register("password")}
             />

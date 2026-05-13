@@ -131,7 +131,7 @@ export function ActivityDashboard(): React.JSX.Element {
         <div className="flex flex-wrap gap-3">
           <Select value={entityType} onValueChange={setEntityType}>
             <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Entity" />
+              <SelectValue placeholder="Select entity" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All entities</SelectItem>
@@ -141,7 +141,7 @@ export function ActivityDashboard(): React.JSX.Element {
           </Select>
           <Select value={action} onValueChange={setAction}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Action" />
+              <SelectValue placeholder="Select action" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All actions</SelectItem>
@@ -155,7 +155,7 @@ export function ActivityDashboard(): React.JSX.Element {
           </Select>
           <Select value={actorId} onValueChange={setActorId}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="User" />
+              <SelectValue placeholder="Select user" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All users</SelectItem>

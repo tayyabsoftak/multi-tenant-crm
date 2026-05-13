@@ -179,7 +179,7 @@ export function CustomerList(): React.JSX.Element {
               setSearch(v);
               setPage(1);
             }}
-            placeholder="Search name or email…"
+            placeholder="Search customers by name or email..."
             isLoading={search !== debouncedSearch}
             className="sm:flex-1"
           />
@@ -581,21 +581,21 @@ function CustomerFormDialog({
         <form className="space-y-4" onSubmit={submit}>
           <div className="space-y-2">
             <Label htmlFor="c-name">Name</Label>
-            <Input id="c-name" {...form.register("name")} />
+            <Input id="c-name" placeholder="Enter full name" {...form.register("name")} />
             {form.formState.errors.name ? (
               <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
             ) : null}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="c-email">Email <span className="text-muted-foreground text-xs">(optional)</span></Label>
-            <Input id="c-email" type="email" placeholder="customer@example.com" {...form.register("email")} />
+            <Label htmlFor="c-email">Email</Label>
+            <Input id="c-email" type="email" placeholder="Enter email address" {...form.register("email")} />
             {form.formState.errors.email ? (
               <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
             ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="c-phone">Phone</Label>
-            <Input id="c-phone" {...form.register("phone")} />
+            <Input id="c-phone" placeholder="Enter phone number" {...form.register("phone")} />
           </div>
           {isAdmin ? (
             <div className="space-y-2">

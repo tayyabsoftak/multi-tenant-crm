@@ -161,15 +161,15 @@ export function TeamManagement(): React.JSX.Element {
           >
             <div className="space-y-2">
               <Label htmlFor="tu-name">Name</Label>
-              <Input id="tu-name" placeholder="John Doe" {...createForm.register("name")} />
+              <Input id="tu-name" placeholder="Enter full name" {...createForm.register("name")} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="tu-email">Email</Label>
-              <Input id="tu-email" type="email" placeholder="john@example.com" {...createForm.register("email")} />
+              <Input id="tu-email" type="email" placeholder="Enter email address" {...createForm.register("email")} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="tu-password">Password</Label>
-              <Input id="tu-password" type="password" autoComplete="new-password" {...createForm.register("password")} />
+              <Input id="tu-password" type="password" autoComplete="new-password" placeholder="Enter password" {...createForm.register("password")} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="tu-role">Role</Label>

@@ -300,7 +300,7 @@ export function CustomerDetailView({ id }: { id: string }): React.JSX.Element {
             })}
           >
             <Label htmlFor="note">Add New Note</Label>
-            <Textarea id="note" rows={3} placeholder="Type your note here..." {...noteForm.register("content")} />
+            <Textarea id="note" rows={3} placeholder="Enter note content..." {...noteForm.register("content")} />
             {noteForm.formState.errors.content ? (
               <p className="text-xs text-destructive">{noteForm.formState.errors.content.message}</p>
             ) : null}

@@ -118,7 +118,7 @@ export function RegisterForm(): React.JSX.Element {
           <Input
             id="register-name"
             autoComplete="name"
-            placeholder="Jane Doe"
+            placeholder="Enter full name"
             className={cn(form.formState.errors.name && "border-destructive")}
             {...form.register("name")}
           />
@@ -133,7 +133,7 @@ export function RegisterForm(): React.JSX.Element {
             id="register-email"
             type="email"
             autoComplete="email"
-            placeholder="you@company.com"
+            placeholder="Enter email address"
             className={cn(form.formState.errors.email && "border-destructive")}
             {...form.register("email")}
           />
@@ -147,7 +147,7 @@ export function RegisterForm(): React.JSX.Element {
           <Input
             id="register-org"
             autoComplete="organization"
-            placeholder="Acme Inc."
+            placeholder="Enter organization name"
             className={cn(form.formState.errors.organizationName && "border-destructive")}
             {...form.register("organizationName")}
           />
@@ -166,7 +166,7 @@ export function RegisterForm(): React.JSX.Element {
               id="register-password"
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
-              placeholder="Create a strong password"
+              placeholder="Enter strong password"
               className={cn("pr-10", form.formState.errors.password && "border-destructive")}
               {...form.register("password")}
             />
@@ -214,7 +214,7 @@ export function RegisterForm(): React.JSX.Element {
               id="register-confirm"
               type={showConfirm ? "text" : "password"}
               autoComplete="new-password"
-              placeholder="Repeat password"
+              placeholder="Confirm password"
               className={cn("pr-10", form.formState.errors.confirmPassword && "border-destructive")}
               {...form.register("confirmPassword")}
             />
