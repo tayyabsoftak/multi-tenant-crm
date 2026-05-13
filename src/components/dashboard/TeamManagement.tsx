@@ -22,13 +22,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { isOrgAdmin } from "@/lib/permissions";
 
@@ -48,7 +41,7 @@ const createUserSchema = z.object({
   role: z.enum(["ADMIN", "USER"]),
 });
 
-export function TeamPageClient(): React.JSX.Element {
+export function TeamManagement(): React.JSX.Element {
   const { data: session, status } = useSession();
   const role = session?.user?.role ?? "";
   const admin = isOrgAdmin(role);
@@ -57,7 +50,7 @@ export function TeamPageClient(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const load = useCallback(async () => {
+  const loadTeam = useCallback(async () => {
     const res = await fetch("/api/users");
     if (!res.ok) {
       setRows([]);
@@ -72,10 +65,10 @@ export function TeamPageClient(): React.JSX.Element {
     if (status !== "authenticated") return;
     void (async () => {
       setLoading(true);
-      await load();
+      await loadTeam();
       setLoading(false);
     })();
-  }, [status, load]);
+  }, [status, loadTeam]);
 
   const createForm = useForm<z.infer<typeof createUserSchema>>({
     resolver: zodResolver(createUserSchema),
@@ -88,9 +81,9 @@ export function TeamPageClient(): React.JSX.Element {
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Team</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Team Management</h2>
           <p className="text-sm text-muted-foreground">
-            Users in your organization. Admins can create users and set their password.
+            Manage users in your organization. Admins can create new team members.
           </p>
         </div>
         {admin ? (
@@ -145,7 +138,7 @@ export function TeamPageClient(): React.JSX.Element {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create user</DialogTitle>
+            <DialogTitle>Create New User</DialogTitle>
           </DialogHeader>
           <form
             className="space-y-4"
@@ -157,45 +150,34 @@ export function TeamPageClient(): React.JSX.Element {
               });
               if (!res.ok) {
                 const j = await res.json().catch(() => ({}));
-                toast.error((j as { error?: string }).error ?? "Failed");
+                toast.error((j as { error?: string }).error ?? "Failed to create user");
                 return;
               }
-              toast.success("User created");
+              toast.success("User created successfully");
               createForm.reset();
               setCreateOpen(false);
-              void load();
+              void loadTeam();
             })}
           >
             <div className="space-y-2">
               <Label htmlFor="tu-name">Name</Label>
-              <Input id="tu-name" {...createForm.register("name")} />
+              <Input id="tu-name" placeholder="John Doe" {...createForm.register("name")} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="tu-email">Email</Label>
-              <Input id="tu-email" type="email" {...createForm.register("email")} />
+              <Input id="tu-email" type="email" placeholder="john@example.com" {...createForm.register("email")} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="tu-password">Password</Label>
               <Input id="tu-password" type="password" autoComplete="new-password" {...createForm.register("password")} />
             </div>
             <div className="space-y-2">
-              <Label>Role</Label>
-              <Select
-                value={createForm.watch("role")}
-                onValueChange={(val) => createForm.setValue("role", val as "ADMIN" | "USER", { shouldValidate: true })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="USER">Member</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="tu-role">Role</Label>
+              <Input id="tu-role" value="Member" disabled className="bg-muted" />
             </div>
             <DialogFooter>
               <Button type="submit" disabled={createForm.formState.isSubmitting}>
-                Create
+                Create User
               </Button>
             </DialogFooter>
           </form>

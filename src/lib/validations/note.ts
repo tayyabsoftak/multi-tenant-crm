@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createNoteSchema = z.object({
-  customerId: z.string().cuid(),
+  customerId: z.string(),
   content: z.string().min(2).max(2000),
 });
 

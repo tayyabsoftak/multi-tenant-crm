@@ -32,7 +32,7 @@ interface ActivityItem {
   customer: { id: string; name: string; deletedAt: string | null } | null;
 }
 
-function label(row: ActivityItem): string {
+function getActivityLabel(row: ActivityItem): string {
   const actor = row.actor?.name ?? "Someone";
   const meta = (row.metadata ?? {}) as Record<string, string>;
   const customer = row.customer?.name ?? meta.customerName ?? "record";
@@ -48,7 +48,7 @@ function label(row: ActivityItem): string {
   }
 }
 
-export function ActivityPageClient(): React.JSX.Element {
+export function ActivityDashboard(): React.JSX.Element {
   const router = useRouter();
   const { status, data } = useSession();
   const admin = isOrgAdmin(data?.user?.role ?? "");
@@ -70,7 +70,7 @@ export function ActivityPageClient(): React.JSX.Element {
       .then((j: { data: { id: string; name: string }[] }) => {
         setActors(j.data.map((u) => ({ id: u.id, name: u.name })));
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const fetchList = useCallback(async () => {
@@ -115,7 +115,7 @@ export function ActivityPageClient(): React.JSX.Element {
     const header = ["time", "description"];
     const lines = items.map((row) => [
       format(new Date(row.createdAt), "yyyy-MM-dd HH:mm:ss"),
-      label(row).replaceAll('"', '""'),
+      getActivityLabel(row).replaceAll('"', '""'),
     ]);
     const csv = [header.join(","), ...lines.map((l) => l.map((c) => `"${c}"`).join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -212,7 +212,7 @@ export function ActivityPageClient(): React.JSX.Element {
               <div key={row.id} className="flex gap-3 border-b pb-4 last:border-0 last:pb-0">
                 <AppAvatar name={row.actor?.name} email={row.actor?.email} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm leading-snug">{label(row)}</p>
+                  <p className="text-sm leading-snug">{getActivityLabel(row)}</p>
                   <p
                     className="mt-1 text-xs text-muted-foreground"
                     title={format(new Date(row.createdAt), "PPpp")}

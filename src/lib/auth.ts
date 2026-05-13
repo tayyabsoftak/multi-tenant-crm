@@ -26,28 +26,25 @@ export const authOptions: NextAuthOptions = {
         }
 
         const email = parsed.data.email.trim().toLowerCase();
-        const user = await prisma.user.findUnique({
-          where: { email },
+        const users = await prisma.user.findMany({
+          where: { email, deletedAt: null },
         });
-        if (!user || user.deletedAt) {
-          return null;
-        }
-        if (!user?.passwordHash) {
-          return null;
+
+        for (const user of users) {
+          if (!user.passwordHash) continue;
+          const valid = await bcrypt.compare(parsed.data.password, user.passwordHash);
+          if (valid) {
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              role: user.role,
+              organizationId: user.organizationId,
+            };
+          }
         }
 
-        const valid = await bcrypt.compare(parsed.data.password, user.passwordHash);
-        if (!valid) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          organizationId: user.organizationId,
-        };
+        return null;
       },
     }),
   ],

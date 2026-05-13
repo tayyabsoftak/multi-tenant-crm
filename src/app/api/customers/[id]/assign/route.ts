@@ -6,7 +6,7 @@ import { isOrgAdmin } from "@/lib/permissions";
 import { assignCustomer, unassignCustomer } from "@/lib/services/customer-service";
 
 const bodySchema = z.object({
-  userId: z.string().cuid().nullable(),
+  userId: z.string().nullable(),
 });
 
 type RouteContext = { params: Promise<{ id: string }> };

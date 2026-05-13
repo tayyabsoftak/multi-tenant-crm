@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { authOptions } from "@/lib/auth";
 

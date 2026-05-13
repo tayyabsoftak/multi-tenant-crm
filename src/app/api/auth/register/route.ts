@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
-import { registerBodySchema } from "@/lib/validations/register.schema";
+import { registerBodySchema } from "@/lib/validations/auth";
 
 export async function POST(request: Request): Promise<NextResponse> {
   let json: unknown;
@@ -23,12 +23,6 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const email = parsed.data.email.trim().toLowerCase();
 
-  const existing = await prisma.user.findUnique({
-    where: { email },
-  });
-  if (existing) {
-    return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 });
-  }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);
 

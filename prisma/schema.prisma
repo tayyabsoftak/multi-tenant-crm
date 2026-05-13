@@ -28,7 +28,7 @@ model User {
   id             String        @id @default(cuid())
   organizationId String
   organization   Organization  @relation(fields: [organizationId], references: [id])
-  email          String        @unique
+  email          String
   name           String
   passwordHash   String?
   role           UserRole      @default(USER)
@@ -38,8 +38,10 @@ model User {
   deletedAt      DateTime?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-
+  
+  @@unique([organizationId, email])
   @@index([organizationId, deletedAt])
+  @@index([email])
 }
 
 model Customer {

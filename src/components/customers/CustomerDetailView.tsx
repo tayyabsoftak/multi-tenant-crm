@@ -61,7 +61,7 @@ interface NoteRow {
 
 const noteSchema = z.object({ content: z.string().min(1).max(5000) });
 
-export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element {
+export function CustomerDetailView({ id }: { id: string }): React.JSX.Element {
   const router = useRouter();
   const { data: session } = useSession();
   const admin = isOrgAdmin(session?.user?.role ?? "");
@@ -71,7 +71,7 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
   const [loading, setLoading] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const load = useCallback(async () => {
+  const loadCustomerData = useCallback(async () => {
     setLoading(true);
     try {
       const cRes = await fetch(`/api/customers/${id}`);
@@ -105,8 +105,8 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
   }, [id, admin]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void loadCustomerData();
+  }, [loadCustomerData]);
 
   const noteForm = useForm<z.infer<typeof noteSchema>>({
     resolver: zodResolver(noteSchema),
@@ -121,7 +121,7 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
   const deleted = !!customer.deletedAt;
   const assigned = !!customer.assigneeId && !deleted;
 
-  function activityLine(row: ActivityItem, customerName: string): string {
+  function getActivityLine(row: ActivityItem, customerName: string): string {
     const actor = row.actor?.name ?? "Someone";
     const meta = (row.metadata ?? {}) as Record<string, string>;
     switch (row.action) {
@@ -129,6 +129,8 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
         return `${actor} created ${customerName}`;
       case ActivityActions.CUSTOMER_ASSIGNED:
         return `${actor} assigned ${customerName} to ${meta.assigneeName ?? "user"}`;
+      case ActivityActions.NOTE_ADDED:
+        return `${actor} added a note on ${customerName}`;
       default:
         return `${actor} · ${row.action}`;
     }
@@ -170,13 +172,13 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
           <Button variant="outline" asChild>
             <Link href="/dashboard/customers">
               <ArrowLeft className="mr-2 size-4" />
-              Back
+              Back to List
             </Link>
           </Button>
           {!deleted && admin ? (
             <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
               <Trash2 className="mr-2 size-4" />
-              Delete
+              Delete Customer
             </Button>
           ) : null}
           {deleted && admin ? (
@@ -186,13 +188,13 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
                 const res = await fetch(`/api/customers/${id}/restore`, { method: "POST" });
                 if (!res.ok) toast.error("Restore failed");
                 else {
-                  toast.success("Restored");
-                  void load();
+                  toast.success("Customer restored successfully");
+                  void loadCustomerData();
                 }
               }}
             >
               <RotateCcw className="mr-2 size-4" />
-              Restore
+              Restore Customer
             </Button>
           ) : null}
         </div>
@@ -201,7 +203,7 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Details</CardTitle>
+            <CardTitle className="text-sm">Customer Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div>
@@ -220,24 +222,24 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Assignment</CardTitle>
+            <CardTitle className="text-sm">Current Assignment</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <p>{customer.assignee?.name ?? "Unassigned"}</p>
             {admin ? (
               <Button variant="outline" size="sm" asChild>
-                <Link href={`/dashboard/customers?assign=${customer.id}`}>Change on list</Link>
+                <Link href={`/dashboard/customers?assign=${customer.id}`}>Change Assignment</Link>
               </Button>
             ) : null}
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Stats</CardTitle>
+            <CardTitle className="text-sm">Quick Stats</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <p>Notes: {customer.counts.notesCount}</p>
-            <p>Activities: {customer.counts.activitiesCount}</p>
+            <p>Total Notes: {customer.counts.notesCount}</p>
+            <p>Total Activities: {customer.counts.activitiesCount}</p>
           </CardContent>
         </Card>
       </div>
@@ -245,7 +247,7 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
       {admin ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Activity</CardTitle>
+            <CardTitle className="text-base">Customer Activity Log</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {activities.length ? (
@@ -253,7 +255,7 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
                 <div key={row.id} className="flex gap-3 border-b pb-3 text-sm last:border-0 last:pb-0">
                   <AppAvatar name={row.actor?.name} email={row.actor?.email} className="size-8" />
                   <div>
-                    <p>{activityLine(row, customer.name)}</p>
+                    <p>{getActivityLine(row, customer.name)}</p>
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(row.createdAt), { addSuffix: true })}
                     </p>
@@ -261,7 +263,7 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground">No activity for this customer.</p>
+              <p className="text-sm text-muted-foreground">No activity recorded for this customer.</p>
             )}
           </CardContent>
         </Card>
@@ -269,7 +271,7 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Notes</CardTitle>
+          <CardTitle className="text-base">Internal Notes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {notes.map((n) => (
@@ -287,7 +289,7 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
                   onClick={async () => {
                     const res = await fetch(`/api/notes/${n.id}`, { method: "DELETE" });
                     if (!res.ok) toast.error("Delete failed");
-                    else void load();
+                    else void loadCustomerData();
                   }}
                 >
                   Delete
@@ -306,17 +308,17 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
               if (!res.ok) toast.error("Could not add note");
               else {
                 noteForm.reset();
-                void load();
+                void loadCustomerData();
               }
             })}
           >
-            <Label htmlFor="note">Add note</Label>
-            <Textarea id="note" rows={3} {...noteForm.register("content")} />
+            <Label htmlFor="note">Add New Note</Label>
+            <Textarea id="note" rows={3} placeholder="Type your note here..." {...noteForm.register("content")} />
             {noteForm.formState.errors.content ? (
               <p className="text-xs text-destructive">{noteForm.formState.errors.content.message}</p>
             ) : null}
             <Button type="submit" disabled={noteForm.formState.isSubmitting}>
-              Submit
+              {noteForm.formState.isSubmitting ? "Submitting..." : "Add Note"}
             </Button>
           </form>
         </CardContent>
@@ -326,14 +328,14 @@ export function CustomerDetailClient({ id }: { id: string }): React.JSX.Element 
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title="Soft-delete this customer?"
-        description="Notes and activity logs will remain."
+        description="Notes and activity logs will remain. You can restore this customer later from the list view."
         variant="destructive"
-        confirmLabel="Delete"
+        confirmLabel="Delete Customer"
         onConfirm={async () => {
           const res = await fetch(`/api/customers/${id}`, { method: "DELETE" });
-          if (!res.ok) toast.error("Failed");
+          if (!res.ok) toast.error("Delete operation failed");
           else {
-            toast.success("Deleted");
+            toast.success("Customer deleted successfully");
             router.push("/dashboard/customers");
           }
         }}

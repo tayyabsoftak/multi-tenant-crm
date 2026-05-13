@@ -36,7 +36,7 @@ interface Summary {
   topAssignees: { userId: string; name: string; count: number }[];
 }
 
-function activityLabel(row: ActivityRow): string {
+function getActivityLabel(row: ActivityRow): string {
   const actor = row.actor?.name ?? "Someone";
   const meta = (row.metadata ?? {}) as Record<string, string>;
   const customer = row.customer?.name ?? meta.customerName ?? "customer";
@@ -63,12 +63,10 @@ function activityLabel(row: ActivityRow): string {
 function StatCard({
   title,
   value,
-  trend,
   loading,
 }: {
   title: string;
   value: string | number;
-  trend: string;
   loading: boolean;
 }): React.JSX.Element {
   return (
@@ -83,13 +81,12 @@ function StatCard({
         ) : (
           <div className="text-2xl font-bold tracking-tight">{value}</div>
         )}
-        <p className={cn("mt-1 text-xs text-muted-foreground")}>{trend}</p>
       </CardContent>
     </Card>
   );
 }
 
-export function DashboardHome(): React.JSX.Element {
+export function DashboardOverview(): React.JSX.Element {
   const { data: session, status } = useSession();
   const [data, setData] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,11 +116,6 @@ export function DashboardHome(): React.JSX.Element {
   }
 
   const admin = isOrgAdmin(session?.user?.role ?? "");
-  const chartData =
-    data?.topAssignees.map((r) => ({
-      name: r.name.length > 18 ? `${r.name.slice(0, 18)}…` : r.name,
-      count: r.count,
-    })) ?? [];
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-8">
@@ -133,35 +125,29 @@ export function DashboardHome(): React.JSX.Element {
         <StatCard
           title="Total customers"
           value={data?.stats.totalCustomers ?? "—"}
-          trend="+12% vs last month (mock)"
           loading={loading}
         />
         <StatCard
           title="Active (assigned)"
           value={data?.stats.activeAssigned ?? "—"}
-          trend="+4% vs last month (mock)"
           loading={loading}
         />
         <StatCard
           title="Unassigned"
           value={data?.stats.unassigned ?? "—"}
-          trend="Clear backlog (mock)"
           loading={loading}
         />
-        {admin ? (
+        {admin &&
           <StatCard
             title="Team members"
             value={data?.stats.teamMembers ?? "—"}
-            trend="Headcount (mock)"
             loading={loading}
           />
-        ) : (
-          <StatCard title="Team members" value="—" trend="Visible to admins" loading={loading} />
-        )}
+       }
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {admin ? (
+        {admin && (
           <>
             <Card className="border-border/80 shadow-sm lg:col-span-2">
               <CardHeader className="flex flex-row items-center justify-between">
@@ -186,7 +172,7 @@ export function DashboardHome(): React.JSX.Element {
                       <li key={row.id} className="flex gap-3 text-sm">
                         <AppAvatar name={row.actor?.name} email={row.actor?.email} className="size-9" />
                         <div className="min-w-0 flex-1">
-                          <p className="leading-snug text-foreground">{activityLabel(row)}</p>
+                          <p className="leading-snug text-foreground">{getActivityLabel(row)}</p>
                           <p className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(row.createdAt), { addSuffix: true })}
                             {row.customer && !row.customer.deletedAt ? (
@@ -211,35 +197,52 @@ export function DashboardHome(): React.JSX.Element {
               </CardContent>
             </Card>
 
-            <Card className="border-border/80 shadow-sm">
+            <Card className="border-border/80 shadow-sm transition-all hover:shadow-md">
               <CardHeader>
-                <CardTitle className="text-base">Top assignees</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base font-bold">
+                  <div className="size-2 rounded-full bg-indigo-500 animate-pulse" />
+                  Top Performers
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-2">
                 {loading ? (
-                  <Skeleton className="h-48 w-full" />
-                ) : chartData.length ? (
-                  <div className="h-52 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} layout="vertical" margin={{ left: 4, right: 8 }}>
-                        <XAxis type="number" hide />
-                        <YAxis type="category" dataKey="name" width={88} tick={{ fontSize: 11 }} />
-                        <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+                  <div className="space-y-4 px-4">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-10 w-full rounded-lg" />
+                    ))}
+                  </div>
+                ) : data?.topAssignees.length ? (
+                  <div className="space-y-1">
+                    {data.topAssignees.map((user, idx) => {
+                      const maxCount = Math.max(...data.topAssignees.map(u => u.count), 1);
+                      const percentage = (user.count / maxCount) * 100;
+                      return (
+                        <div key={user.userId} className="group relative flex items-center gap-4 rounded-xl p-3 transition-colors hover:bg-muted/50">
+                          <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-50 to-white text-xs font-black text-indigo-600 shadow-sm ring-1 ring-indigo-100 group-hover:scale-110 transition-transform">
+                            {idx + 1}
+                          </div>
+                          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="truncate text-sm font-bold text-foreground">{user.name}</span>
+                              <span className="text-[11px] font-black tabular-nums text-indigo-600">{user.count}</span>
+                            </div>
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/40">
+                              <div 
+                                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.4)] transition-all duration-1000 ease-out" 
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No assignments yet.</p>
+                  <p className="py-8 text-center text-sm text-muted-foreground">Tracking assignments…</p>
                 )}
               </CardContent>
             </Card>
           </>
-        ) : (
-          <Card className="border-border/80 shadow-sm lg:col-span-3">
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              Activity and assignment analytics are available to organization admins.
-            </CardContent>
-          </Card>
         )}
       </div>
 

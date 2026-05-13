@@ -24,6 +24,9 @@ const assigneeOrder = (dir: Prisma.SortOrder): Prisma.CustomerOrderByWithRelatio
 });
 
 export async function listCustomersForOrg(params: ListCustomersParams) {
+  if (!params.organizationId) {
+    throw new Error("Organization ID is required for isolation.");
+  }
   const where: Prisma.CustomerWhereInput = { organizationId: params.organizationId };
 
   if (params.status === "deleted") {
@@ -73,6 +76,9 @@ export async function listCustomersForOrg(params: ListCustomersParams) {
 }
 
 export async function getCustomerById(organizationId: string, customerId: string) {
+  if (!organizationId) {
+    throw new Error("Organization ID is required for isolation.");
+  }
   return prisma.customer.findFirst({
     where: { id: customerId, organizationId },
     include: {
@@ -272,6 +278,9 @@ export async function unassignCustomer(organizationId: string, actorId: string, 
 }
 
 export async function getDashboardStats(organizationId: string) {
+  if (!organizationId) {
+    throw new Error("Organization ID is required for isolation.");
+  }
   const [total, activeAssigned, unassigned, teamMembers] = await Promise.all([
     prisma.customer.count({ where: { organizationId, deletedAt: null } }),
     prisma.customer.count({
@@ -303,7 +312,7 @@ export async function getTopAssignees(organizationId: string, limit = 5) {
   if (ids.length === 0) return [];
 
   const users = await prisma.user.findMany({
-    where: { id: { in: ids } },
+    where: { id: { in: ids }, organizationId },
     select: { id: true, name: true },
   });
   const nameById = new Map(users.map((u) => [u.id, u.name]));

@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 type NavLinkItem = { href: string; label: string; icon: LucideIcon };
 
-export function DashboardNavLinks({
+export function NavLinks({
   onNavigate,
 }: {
   onNavigate?: () => void;

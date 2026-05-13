@@ -3,6 +3,9 @@ import { logActivity } from "@/lib/services/activity-log.service";
 import { prisma } from "@/lib/db";
 
 export async function listNotesForCustomer(organizationId: string, customerId: string) {
+  if (!organizationId) {
+    throw new Error("Organization ID is required for isolation.");
+  }
   return prisma.note.findMany({
     where: { organizationId, customerId, deletedAt: null },
     orderBy: { createdAt: "desc" },
@@ -18,6 +21,9 @@ export async function createNote(
   customerId: string,
   content: string,
 ) {
+  if (!organizationId) {
+    throw new Error("Organization ID is required for isolation.");
+  }
   const customer = await prisma.customer.findFirst({
     where: { id: customerId, organizationId, deletedAt: null },
     select: { name: true },
@@ -48,6 +54,9 @@ export async function createNote(
 }
 
 export async function softDeleteNote(organizationId: string, noteId: string) {
+  if (!organizationId) {
+    throw new Error("Organization ID is required for isolation.");
+  }
   const note = await prisma.note.findFirst({
     where: { id: noteId, organizationId, deletedAt: null },
   });

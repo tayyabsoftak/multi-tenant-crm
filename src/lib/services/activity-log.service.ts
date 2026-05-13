@@ -35,6 +35,9 @@ export interface ListActivitiesParams {
 }
 
 export async function listActivities(params: ListActivitiesParams) {
+  if (!params.organizationId) {
+    throw new Error("Organization ID is required for isolation.");
+  }
   const skip = (params.page - 1) * params.pageSize;
   const where: Prisma.ActivityLogWhereInput = {
     organizationId: params.organizationId,

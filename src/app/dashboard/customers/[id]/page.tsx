@@ -1,4 +1,4 @@
-import { CustomerDetailClient } from "@/components/customers/customer-detail-client";
+import { CustomerDetailView } from "@/components/customers/CustomerDetailView";
 
 export default async function CustomerDetailPage({
   params,
@@ -6,5 +6,5 @@ export default async function CustomerDetailPage({
   params: Promise<{ id: string }>;
 }): Promise<React.JSX.Element> {
   const { id } = await params;
-  return <CustomerDetailClient id={id} />;
+  return <CustomerDetailView id={id} />;
 }

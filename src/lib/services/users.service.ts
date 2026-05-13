@@ -4,6 +4,9 @@ import type { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 
 export async function listUsersInOrg(organizationId: string) {
+  if (!organizationId) {
+    throw new Error("Organization ID is required for user isolation.");
+  }
   return prisma.user.findMany({
     where: { organizationId, deletedAt: null },
     orderBy: { createdAt: "asc" },
@@ -22,8 +25,8 @@ export async function createUserInOrg(
   data: { name: string; email: string; password: string; role: UserRole },
 ) {
   const email = data.email.trim().toLowerCase();
-  const exists = await prisma.user.findUnique({
-    where: { email },
+  const exists = await prisma.user.findFirst({
+    where: { organizationId, email },
   });
   if (exists) throw new Error("EMAIL_TAKEN");
 

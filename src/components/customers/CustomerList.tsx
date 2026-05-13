@@ -62,11 +62,15 @@ interface NoteRow {
   author: { id: string; name: string; email: string };
 }
 
-export function CustomersPageClient(): React.JSX.Element {
+export function CustomerList(): React.JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const admin = isOrgAdmin(session?.user?.role ?? "");
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [status, setStatus] = useState<StatusFilter>("all");
 
   useEffect(() => {
     if (!admin && status === "deleted") {
@@ -74,9 +78,6 @@ export function CustomersPageClient(): React.JSX.Element {
     }
   }, [admin, status]);
 
-  const [search, setSearch] = useState("");
-  const debounced = useDebounce(search, 300);
-  const [status, setStatus] = useState<StatusFilter>("all");
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -95,12 +96,14 @@ export function CustomersPageClient(): React.JSX.Element {
   const [notes, setNotes] = useState<NoteRow[]>([]);
   const [noteLoading, setNoteLoading] = useState(false);
   const [noteText, setNoteText] = useState("");
+  
+  const members = useMemo(() => users.filter((u) => u.role === "USER"), [users]);
 
-  const fetchList = useCallback(async () => {
+  const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        q: debounced,
+        q: debouncedSearch,
         status,
         page: String(page),
         pageSize: String(pageSize),
@@ -118,11 +121,11 @@ export function CustomersPageClient(): React.JSX.Element {
     } finally {
       setLoading(false);
     }
-  }, [debounced, status, page, pageSize, sortBy, sortDir, includeDeleted]);
+  }, [debouncedSearch, status, page, pageSize, sortBy, sortDir, includeDeleted]);
 
   useEffect(() => {
-    void fetchList();
-  }, [fetchList]);
+    void fetchCustomers();
+  }, [fetchCustomers]);
 
   useEffect(() => {
     if (searchParams.get("create") === "1") {
@@ -177,7 +180,7 @@ export function CustomersPageClient(): React.JSX.Element {
               setPage(1);
             }}
             placeholder="Search name or email…"
-            isLoading={search !== debounced}
+            isLoading={search !== debouncedSearch}
             className="sm:flex-1"
           />
           <Select
@@ -300,9 +303,7 @@ export function CustomersPageClient(): React.JSX.Element {
                               <Pencil className="size-4" />
                             </Button>
                           ) : null}
-                          <Button
-                            onClick={() => void openNotes(row)}
-                          >
+                          <Button variant="ghost" size="icon" title="Notes" onClick={() => void openNotes(row)}>
                             <MessageSquare className="size-4" />
                           </Button>
                           {!deleted && admin ? (
@@ -325,7 +326,7 @@ export function CustomersPageClient(): React.JSX.Element {
                                 if (!res.ok) toast.error("Restore failed");
                                 else {
                                   toast.success("Customer restored");
-                                  void fetchList();
+                                  void fetchCustomers();
                                 }
                               }}
                             >
@@ -368,23 +369,23 @@ export function CustomersPageClient(): React.JSX.Element {
       <CustomerFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        users={users}
+        users={members}
         isAdmin={admin}
-        title="Create customer"
+        title="Create Customer"
         onSaved={() => {
-          void fetchList();
+          void fetchCustomers();
           setCreateOpen(false);
         }}
       />
       <CustomerFormDialog
         open={!!editRow}
         onOpenChange={(o) => !o && setEditRow(null)}
-        users={users}
+        users={members}
         isAdmin={admin}
-        title="Edit customer"
+        title="Edit Customer"
         initial={editRow ?? undefined}
         onSaved={() => {
-          void fetchList();
+          void fetchCustomers();
           setEditRow(null);
         }}
       />
@@ -392,10 +393,10 @@ export function CustomersPageClient(): React.JSX.Element {
       {admin ? (
         <AssignDialog
           row={assignRow}
-          users={users}
+          users={members}
           onClose={() => setAssignRow(null)}
           onDone={() => {
-            void fetchList();
+            void fetchCustomers();
             setAssignRow(null);
           }}
         />
@@ -416,7 +417,7 @@ export function CustomersPageClient(): React.JSX.Element {
             else {
               toast.success("Customer deleted");
               setDeleteRow(null);
-              void fetchList();
+              void fetchCustomers();
             }
           }}
         />
@@ -544,7 +545,7 @@ function CustomerFormDialog({
   const submit = form.handleSubmit(async (values) => {
     const base = {
       name: values.name,
-      email: values.email,
+      email: values.email === "" ? undefined : values.email,
       phone: values.phone === "" ? null : values.phone,
     };
     const body =
@@ -586,8 +587,8 @@ function CustomerFormDialog({
             ) : null}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="c-email">Email</Label>
-            <Input id="c-email" type="email" {...form.register("email")} />
+            <Label htmlFor="c-email">Email <span className="text-muted-foreground text-xs">(optional)</span></Label>
+            <Input id="c-email" type="email" placeholder="customer@example.com" {...form.register("email")} />
             {form.formState.errors.email ? (
               <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
             ) : null}
@@ -600,14 +601,13 @@ function CustomerFormDialog({
             <div className="space-y-2">
               <Label>Assign to</Label>
               <Select
-                value={form.watch("assigneeId") ?? "none"}
-                onValueChange={(v) => form.setValue("assigneeId", v === "none" ? null : v)}
+                value={form.watch("assigneeId") ?? ""}
+                onValueChange={(v) => form.setValue("assigneeId", v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Unassigned" />
+                  <SelectValue placeholder="Select a member" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Unassigned</SelectItem>
                   {users.map((u) => (
                     <SelectItem key={u.id} value={u.id}>
                       {u.name} ({u.email})
@@ -660,19 +660,18 @@ function AssignDialog({
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Assign customer</DialogTitle>
+          <DialogTitle>Assign Customer</DialogTitle>
         </DialogHeader>
         {row ? (
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">
               Current: {row.assignee?.name ?? <em>Unassigned</em>}
             </p>
-            <Select value={userId || "none"} onValueChange={(v) => setUserId(v === "none" ? "" : v)}>
+            <Select value={userId} onValueChange={setUserId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select user" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Unassign</SelectItem>
                 {users.map((u) => (
                   <SelectItem key={u.id} value={u.id}>
                     {u.name}
@@ -699,7 +698,7 @@ function AssignDialog({
                     const res = await fetch(`/api/customers/${row.id}/assign`, {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ userId: userId === "" ? null : userId }),
+                      body: JSON.stringify({ userId: userId }),
                     });
                     if (!res.ok) {
                       const j = await res.json().catch(() => ({}));

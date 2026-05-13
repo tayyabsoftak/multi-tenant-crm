@@ -1,15 +1,11 @@
 "use client";
 
-import { Bell, Menu, Search } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { Menu } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { isOrgAdmin } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const titles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -51,26 +47,6 @@ export function Header({ onOpenMobile }: { onOpenMobile: () => void }): React.JS
             {orgName}
           </Badge>
         </div>
-      </div>
-      <div className="relative hidden max-w-xs flex-1 md:block lg:max-w-md">
-        <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          readOnly
-          placeholder="Search customers… (soon)"
-          className={cn("h-9 bg-muted/50 pl-9")}
-        />
-      </div>
-      <Button type="button" variant="ghost" size="icon" className="text-muted-foreground">
-        <Bell className="size-5" />
-        <span className="sr-only">Notifications</span>
-      </Button>
-      <div className="hidden items-center gap-2 sm:flex">
-        <Avatar className="size-8">
-          <AvatarFallback className="text-xs">{initials(data?.user?.name, data?.user?.email)}</AvatarFallback>
-        </Avatar>
-        <Badge variant={isOrgAdmin(role) ? "default" : "secondary"} className="capitalize">
-          {isOrgAdmin(role) ? "Admin" : "Member"}
-        </Badge>
       </div>
     </header>
   );

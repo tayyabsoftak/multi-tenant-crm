@@ -44,8 +44,7 @@ export async function PUT(request: Request, context: RouteContext): Promise<Next
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const phone =
-    parsed.data.phone === "" || parsed.data.phone === undefined ? undefined : parsed.data.phone;
+  const phone = parsed.data.phone === "" ? null : parsed.data.phone;
 
   try {
     const data = await updateCustomerForOrg(session.user.organizationId, session.user.id, id, {

@@ -1,5 +1,5 @@
-import { DashboardHome } from "@/components/dashboard/dashboard-home";
+import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 
 export default function DashboardPage(): React.JSX.Element {
-  return <DashboardHome />;
+  return <DashboardOverview />;
 }

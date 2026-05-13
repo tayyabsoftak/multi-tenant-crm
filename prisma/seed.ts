@@ -16,7 +16,7 @@ async function main(): Promise<void> {
   });
 
   await prisma.user.upsert({
-    where: { email: "admin@example.com" },
+    where: { id: "seed-admin-id" },
     update: { passwordHash, name: "Acme Admin", role: UserRole.ADMIN, organizationId: org.id },
     create: {
       id: "seed-admin-id",
@@ -29,7 +29,7 @@ async function main(): Promise<void> {
   });
 
   const member = await prisma.user.upsert({
-    where: { email: "member@example.com" },
+    where: { id: "seed-member-id" },
     update: { passwordHash, name: "Acme Member", role: UserRole.USER, organizationId: org.id },
     create: {
       id: "seed-member-id",

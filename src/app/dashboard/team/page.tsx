@@ -1,5 +1,5 @@
-import { TeamPageClient } from "@/components/dashboard/team-page-client";
+import { TeamManagement } from "@/components/dashboard/TeamManagement";
 
 export default function TeamPage(): React.JSX.Element {
-  return <TeamPageClient />;
+  return <TeamManagement />;
 }
