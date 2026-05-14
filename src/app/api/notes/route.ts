@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
-import { createNote } from "@/lib/services/notes.service";
-import { createNoteSchema } from "@/lib/validations/note";
+import { createNote } from "@/lib/services/NoteService";
+import { createNoteWithCustomerSchema } from "@/lib/validations/NoteSchema";
 
 export async function POST(request: Request): Promise<NextResponse> {
   const session = await getServerSession(authOptions);
@@ -11,7 +11,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const payload = await request.json();
-  const parsed = createNoteSchema.safeParse(payload);
+  const parsed = createNoteWithCustomerSchema.safeParse(payload);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }

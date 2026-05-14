@@ -54,17 +54,24 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const phone =
-    parsed.data.phone === "" || parsed.data.phone === undefined ? null : (parsed.data.phone ?? null);
-
   const assigneeId = isOrgAdmin(session.user.role)
-    ? (parsed.data.assigneeId ?? session.user.id)
+    ? (parsed.data.assigneeId !== undefined ? parsed.data.assigneeId : session.user.id)
     : session.user.id;
 
-  const data = await createCustomerForOrg(session.user.organizationId, session.user.id, {
-    ...parsed.data,
-    phone,
-    assigneeId,
-  });
-  return NextResponse.json({ data }, { status: 201 });
+  try {
+    const data = await createCustomerForOrg(session.user.organizationId, session.user.id, {
+      ...parsed.data,
+      assigneeId,
+    });
+    return NextResponse.json({ data }, { status: 201 });
+  } catch (err) {
+    if (err instanceof Error && err.message === "ASSIGN_LIMIT") {
+      const isSelf = assigneeId === session.user.id;
+      return NextResponse.json(
+        { error: isSelf ? "You already have the maximum number of active customers (5)." : "This user already has the maximum number of active customers (5)." },
+        { status: 409 },
+      );
+    }
+    return NextResponse.json({ error: "Failed to create customer" }, { status: 500 });
+  }
 }

@@ -44,15 +44,18 @@ export async function PUT(request: Request, context: RouteContext): Promise<Next
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const phone = parsed.data.phone === "" ? null : parsed.data.phone;
 
   try {
-    const data = await updateCustomerForOrg(session.user.organizationId, session.user.id, id, {
-      ...parsed.data,
-      phone,
-    });
+    const data = await updateCustomerForOrg(session.user.organizationId, session.user.id, id, parsed.data);
     return NextResponse.json({ data });
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.message === "ASSIGN_LIMIT") {
+      const isSelf = parsed.data.assigneeId === session.user.id;
+      return NextResponse.json(
+        { error: isSelf ? "You already have the maximum number of active customers (5)." : "This user already has the maximum number of active customers (5)." },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 }

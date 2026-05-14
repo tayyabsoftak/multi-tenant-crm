@@ -2,19 +2,17 @@
 
 import { formatDistanceToNow } from "date-fns";
 import { ArrowRight, TrendingUp } from "lucide-react";
-import Link from "next/link";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 import { AppAvatar } from "@/components/common/AppAvatar";
 import { FullPageSpinner } from "@/components/common/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ActivityActions } from "@/lib/constants/crm";
 import { isOrgAdmin } from "@/lib/permissions";
-import { cn, formatActivityLabel } from "@/lib/utils";
+import { formatActivityLabel } from "@/lib/utils";
 
 export type ActivityRow = {
   id: string;
@@ -108,11 +106,6 @@ export function DashboardOverview(): React.JSX.Element {
           value={data?.stats.activeAssigned ?? "—"}
           loading={loading}
         />
-        <StatCard
-          title="Unassigned"
-          value={data?.stats.unassigned ?? "—"}
-          loading={loading}
-        />
         {admin &&
           <StatCard
             title="Team members"
@@ -143,10 +136,10 @@ export function DashboardOverview(): React.JSX.Element {
                     ))}
                   </div>
                 ) : data?.recentActivities.length ? (
-                  <ul className="space-y-3">
-                    {data.recentActivities.map((row) => (
-                      <li key={row.id} className="flex gap-3 text-sm">
-                        <AppAvatar name={row.actor?.name} email={row.actor?.email} className="size-9" />
+                  <ul className="space-y-6">
+                    {data.recentActivities.slice(0, 6).map((row) => (
+                      <li key={row.id} className="flex items-start gap-4 text-sm">
+                        <AppAvatar name={row.actor?.name} email={row.actor?.email} className="size-10" />
                         <div className="min-w-0 flex-1">
                           <p className="leading-snug text-foreground">
                             {formatActivityLabel(row.action, row.actor?.name, row.customer?.name, row.metadata)}
@@ -176,11 +169,16 @@ export function DashboardOverview(): React.JSX.Element {
             </Card>
 
             <Card className="border-border/80 shadow-sm transition-all hover:shadow-md">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-base font-bold">
-                  <div className="size-2 rounded-full bg-indigo-500 animate-pulse" />
                   Top Performers
                 </CardTitle>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/dashboard/team" className="gap-1">
+                    View all
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
               </CardHeader>
               <CardContent className="px-2">
                 {loading ? (
@@ -190,30 +188,23 @@ export function DashboardOverview(): React.JSX.Element {
                     ))}
                   </div>
                 ) : data?.topAssignees.length ? (
-                  <div className="space-y-1">
-                    {data.topAssignees.map((user, idx) => {
-                      const maxCount = Math.max(...data.topAssignees.map(u => u.count), 1);
-                      const percentage = (user.count / maxCount) * 100;
-                      return (
-                        <div key={user.userId} className="group relative flex items-center gap-4 rounded-xl p-3 transition-colors hover:bg-muted/50">
-                          <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-50 to-white text-xs font-black text-indigo-600 shadow-sm ring-1 ring-indigo-100 group-hover:scale-110 transition-transform">
-                            {idx + 1}
-                          </div>
-                          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                            <div className="flex items-center justify-between">
-                              <span className="truncate text-sm font-bold text-foreground">{user.name}</span>
-                              <span className="text-[11px] font-black tabular-nums text-indigo-600">{user.count}</span>
-                            </div>
-                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/40">
-                              <div 
-                                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.4)] transition-all duration-1000 ease-out" 
-                                style={{ width: `${percentage}%` }}
-                              />
-                            </div>
-                          </div>
+                  <div className="space-y-2">
+                    {data.topAssignees.slice(0, 6).map((user, idx) => (
+                      <div key={user.userId} className="flex items-center gap-4 rounded-xl p-3 transition-colors hover:bg-muted/50">
+                        <div className="flex w-6 items-center justify-center text-sm font-bold text-muted-foreground">
+                          #{idx + 1}
                         </div>
-                      );
-                    })}
+                        <AppAvatar name={user.name} className="size-10" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
+                        </div>
+                        <div className="shrink-0">
+                          <span className="inline-flex items-center rounded-md bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
+                            {user.count} active
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <p className="py-8 text-center text-sm text-muted-foreground">Tracking assignments…</p>
@@ -222,15 +213,6 @@ export function DashboardOverview(): React.JSX.Element {
             </Card>
           </>
         )}
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <Button asChild>
-          <Link href="/dashboard/customers?create=1">Add new customer</Link>
-        </Button>
-        <Button variant="secondary" asChild>
-          <Link href="/dashboard/customers">View all customers</Link>
-        </Button>
       </div>
     </div>
   );

@@ -92,26 +92,42 @@ export async function createCustomerForOrg(
   actorId: string,
   input: CreateCustomerInput,
 ) {
-  const customer = await prisma.customer.create({
-    data: {
-      organizationId,
-      name: input.name,
-      email: input.email ?? null,
-      phone: input.phone ?? null,
-      assigneeId: input.assigneeId ?? null,
+  return prisma.$transaction(
+    async (tx) => {
+      if (input.assigneeId) {
+        const count = await tx.customer.count({
+          where: { organizationId, assigneeId: input.assigneeId, deletedAt: null },
+        });
+        if (count >= MAX_ACTIVE_ASSIGNMENTS_PER_USER) {
+          throw new Error("ASSIGN_LIMIT");
+        }
+      }
+
+      const customer = await tx.customer.create({
+        data: {
+          organizationId,
+          name: input.name,
+          email: input.email,
+          phone: input.phone,
+          assigneeId: input.assigneeId ?? null,
+        },
+        include: { assignee: { select: { id: true, name: true, email: true } } },
+      });
+
+      await tx.activityLog.create({
+        data: {
+          organizationId,
+          actorId,
+          action: ActivityActions.CUSTOMER_CREATED,
+          customerId: customer.id,
+          metadata: { customerName: customer.name },
+        },
+      });
+
+      return customer;
     },
-    include: { assignee: { select: { id: true, name: true, email: true } } },
-  });
-
-  await logActivity({
-    organizationId,
-    actorId,
-    action: ActivityActions.CUSTOMER_CREATED,
-    customerId: customer.id,
-    metadata: { customerName: customer.name },
-  });
-
-  return customer;
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+  );
 }
 
 export async function updateCustomerForOrg(
@@ -120,33 +136,47 @@ export async function updateCustomerForOrg(
   customerId: string,
   input: UpdateCustomerInput,
 ) {
-  const existing = await prisma.customer.findFirst({
-    where: { id: customerId, organizationId, deletedAt: null },
-  });
-  if (!existing) {
-    throw new Error("Customer not found.");
-  }
+  return prisma.$transaction(
+    async (tx) => {
+      const existing = await tx.customer.findFirst({
+        where: { id: customerId, organizationId, deletedAt: null },
+      });
+      if (!existing) throw new Error("Customer not found.");
 
-  const customer = await prisma.customer.update({
-    where: { id: customerId },
-    data: {
-      ...(input.name !== undefined ? { name: input.name } : {}),
-      ...(input.email !== undefined ? { email: input.email } : {}),
-      ...(input.phone !== undefined ? { phone: input.phone } : {}),
-      ...(input.assigneeId !== undefined ? { assigneeId: input.assigneeId } : {}),
+      if (input.assigneeId && input.assigneeId !== existing.assigneeId) {
+        const count = await tx.customer.count({
+          where: { organizationId, assigneeId: input.assigneeId, deletedAt: null },
+        });
+        if (count >= MAX_ACTIVE_ASSIGNMENTS_PER_USER) {
+          throw new Error("ASSIGN_LIMIT");
+        }
+      }
+
+      const customer = await tx.customer.update({
+        where: { id: customerId },
+        data: {
+          ...(input.name !== undefined ? { name: input.name } : {}),
+          ...(input.email !== undefined ? { email: input.email } : {}),
+          ...(input.phone !== undefined ? { phone: input.phone } : {}),
+          ...(input.assigneeId !== undefined ? { assigneeId: input.assigneeId } : {}),
+        },
+        include: { assignee: { select: { id: true, name: true, email: true } } },
+      });
+
+      await tx.activityLog.create({
+        data: {
+          organizationId,
+          actorId,
+          action: ActivityActions.CUSTOMER_UPDATED,
+          customerId: customer.id,
+          metadata: { customerName: customer.name },
+        },
+      });
+
+      return customer;
     },
-    include: { assignee: { select: { id: true, name: true, email: true } } },
-  });
-
-  await logActivity({
-    organizationId,
-    actorId,
-    action: ActivityActions.CUSTOMER_UPDATED,
-    customerId: customer.id,
-    metadata: { customerName: customer.name },
-  });
-
-  return customer;
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+  );
 }
 
 export async function softDeleteCustomer(organizationId: string, actorId: string, customerId: string) {
@@ -172,25 +202,45 @@ export async function softDeleteCustomer(organizationId: string, actorId: string
 }
 
 export async function restoreCustomer(organizationId: string, actorId: string, customerId: string) {
-  const existing = await prisma.customer.findFirst({
-    where: { id: customerId, organizationId, deletedAt: { not: null } },
-  });
-  if (!existing) throw new Error("Customer not found or not deleted.");
+  return prisma.$transaction(
+    async (tx) => {
+      const existing = await tx.customer.findFirst({
+        where: { id: customerId, organizationId, deletedAt: { not: null } },
+      });
+      if (!existing) throw new Error("Customer not found or not deleted.");
 
-  const customer = await prisma.customer.update({
-    where: { id: customerId },
-    data: { deletedAt: null },
-  });
+      if (existing.assigneeId) {
+        const count = await tx.customer.count({
+          where: {
+            organizationId,
+            assigneeId: existing.assigneeId,
+            deletedAt: null,
+          },
+        });
+        if (count >= MAX_ACTIVE_ASSIGNMENTS_PER_USER) {
+          throw new Error("RESTORE_ASSIGN_LIMIT");
+        }
+      }
 
-  await logActivity({
-    organizationId,
-    actorId,
-    action: ActivityActions.CUSTOMER_RESTORED,
-    customerId,
-    metadata: { customerName: customer.name },
-  });
+      const customer = await tx.customer.update({
+        where: { id: customerId },
+        data: { deletedAt: null },
+      });
 
-  return customer;
+      await tx.activityLog.create({
+        data: {
+          organizationId,
+          actorId,
+          action: ActivityActions.CUSTOMER_RESTORED,
+          customerId,
+          metadata: { customerName: customer.name },
+        },
+      });
+
+      return customer;
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+  );
 }
 
 export async function assignCustomer(

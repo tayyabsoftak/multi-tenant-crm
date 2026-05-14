@@ -28,7 +28,7 @@ function initials(name: string | null | undefined, email: string | null | undefi
   return n.slice(0, 2).toUpperCase();
 }
 
-export function Header({ onOpenMobile }: { onOpenMobile: () => void }): React.JSX.Element {
+export function Header(): React.JSX.Element {
   const pathname = usePathname();
   const { data } = useSession();
   const role = data?.user?.role ?? "USER";
@@ -36,10 +36,6 @@ export function Header({ onOpenMobile }: { onOpenMobile: () => void }): React.JS
 
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:px-6">
-      <Button type="button" variant="ghost" size="icon" className="md:hidden" onClick={onOpenMobile}>
-        <Menu className="size-5" />
-        <span className="sr-only">Open menu</span>
-      </Button>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="truncate text-lg font-semibold tracking-tight md:text-xl">{pageTitle(pathname)}</h1>

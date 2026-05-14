@@ -18,7 +18,13 @@ export async function POST(_request: Request, context: RouteContext): Promise<Ne
   try {
     await restoreCustomer(session.user.organizationId, session.user.id, id);
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.message === "RESTORE_ASSIGN_LIMIT") {
+      return NextResponse.json(
+        { error: "Cannot restore: assigned user already has 5 active customers." },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 }

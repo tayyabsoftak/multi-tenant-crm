@@ -301,8 +301,10 @@ export function CustomerList(): React.JSX.Element {
                               title="Restore"
                               onClick={async () => {
                                 const res = await fetch(`/api/customers/${row.id}/restore`, { method: "POST" });
-                                if (!res.ok) toast.error("Restore failed");
-                                else {
+                                if (!res.ok) {
+                                  const j = await res.json().catch(() => ({}));
+                                  toast.error(j.error || "Restore failed");
+                                } else {
                                   toast.success("Customer restored");
                                   void fetchCustomers();
                                 }
@@ -441,35 +443,41 @@ export function CustomerList(): React.JSX.Element {
                 <p className="text-sm text-muted-foreground">No notes yet.</p>
               )}
             </div>
-            <div className="shrink-0 space-y-2 border-t pt-4">
-              <Label htmlFor="newnote">Add note</Label>
-              <Textarea
-                id="newnote"
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                rows={3}
-                placeholder="Write a note…"
-              />
-              <Button
-                disabled={!noteText.trim() || !notesCustomer}
-                onClick={async () => {
-                  if (!notesCustomer) return;
-                  const res = await fetch(`/api/customers/${notesCustomer.id}/notes`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ content: noteText }),
-                  });
-                  if (!res.ok) toast.error("Could not add note");
-                  else {
-                    setNoteText("");
-                    toast.success("Note added");
-                    void openNotes(notesCustomer);
-                  }
-                }}
-              >
-                Save note
-              </Button>
-            </div>
+            {notesCustomer?.deletedAt ? (
+              <p className="text-sm text-muted-foreground italic">
+                Cannot add notes to a deleted customer.
+              </p>
+            ) : (
+              <div className="shrink-0 space-y-2 border-t pt-4">
+                <Label htmlFor="newnote">Add note</Label>
+                <Textarea
+                  id="newnote"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  rows={3}
+                  placeholder="Write a note…"
+                />
+                <Button
+                  disabled={!noteText.trim() || !notesCustomer}
+                  onClick={async () => {
+                    if (!notesCustomer) return;
+                    const res = await fetch(`/api/customers/${notesCustomer.id}/notes`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ content: noteText }),
+                    });
+                    if (!res.ok) toast.error("Could not add note");
+                    else {
+                      setNoteText("");
+                      toast.success("Note added");
+                      void openNotes(notesCustomer);
+                    }
+                  }}
+                >
+                  Save note
+                </Button>
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>
@@ -521,15 +529,9 @@ function CustomerFormDialog({
   }, [open, initial, form]);
 
   const submit = form.handleSubmit(async (values) => {
-    const base = {
-      name: values.name,
-      email: values.email === "" ? undefined : values.email,
-      phone: values.phone === "" ? null : values.phone,
-    };
-    const body =
-      isAdmin
-        ? { ...base, assigneeId: values.assigneeId ?? null }
-        : base;
+    const body = isAdmin
+      ? { ...values, assigneeId: values.assigneeId ?? null }
+      : { name: values.name, email: values.email, phone: values.phone };
     const res = initial
       ? await fetch(`/api/customers/${initial.id}`, {
           method: "PUT",
@@ -556,7 +558,7 @@ function CustomerFormDialog({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <form className="space-y-4" onSubmit={submit}>
+        <form className="space-y-4" onSubmit={submit} noValidate>
           <div className="space-y-2">
             <Label htmlFor="c-name">Name</Label>
             <Input id="c-name" placeholder="Enter full name" {...form.register("name")} />
@@ -573,7 +575,20 @@ function CustomerFormDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="c-phone">Phone</Label>
-            <Input id="c-phone" placeholder="Enter phone number" {...form.register("phone")} />
+            <Input
+              id="c-phone"
+              placeholder="Enter phone number"
+              {...form.register("phone")}
+              onInput={(e) => {
+                const input = e.currentTarget;
+                let val = input.value.replace(/[^0-9+\-() ]/g, "");
+                if (val.length > 20) val = val.slice(0, 20);
+                input.value = val;
+              }}
+            />
+            {form.formState.errors.phone ? (
+              <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>
+            ) : null}
           </div>
           {isAdmin ? (
             <div className="space-y-2">
@@ -600,7 +615,9 @@ function CustomerFormDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Saving…" : "Save"}
+              {form.formState.isSubmitting
+                ? initial ? "Updating..." : "Creating..."
+                : initial ? "Update Customer" : "Create Customer"}
             </Button>
           </DialogFooter>
         </form>

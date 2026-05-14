@@ -2,10 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, formatDistanceToNow } from "date-fns";
-import { ArrowLeft, Trash2, RotateCcw } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -27,9 +27,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ActivityActions } from "@/lib/constants/crm";
 import { isOrgAdmin } from "@/lib/permissions";
-import { cn, formatActivityLabel } from "@/lib/utils";
+import { formatActivityLabel } from "@/lib/utils";
 
 interface ActivityItem {
   id: string;
@@ -173,8 +172,10 @@ export function CustomerDetailView({ id }: { id: string }): React.JSX.Element {
               variant="outline"
               onClick={async () => {
                 const res = await fetch(`/api/customers/${id}/restore`, { method: "POST" });
-                if (!res.ok) toast.error("Restore failed");
-                else {
+                if (!res.ok) {
+                  const j = await res.json().catch(() => ({}));
+                  toast.error(j.error || "Restore failed");
+                } else {
                   toast.success("Customer restored successfully");
                   void loadCustomerData();
                 }
@@ -284,30 +285,36 @@ export function CustomerDetailView({ id }: { id: string }): React.JSX.Element {
               ) : null}
             </div>
           ))}
-          <form
-            className="space-y-2 border-t pt-4"
-            onSubmit={noteForm.handleSubmit(async (v) => {
-              const res = await fetch(`/api/customers/${id}/notes`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(v),
-              });
-              if (!res.ok) toast.error("Could not add note");
-              else {
-                noteForm.reset();
-                void loadCustomerData();
-              }
-            })}
-          >
-            <Label htmlFor="note">Add New Note</Label>
-            <Textarea id="note" rows={3} placeholder="Enter note content..." {...noteForm.register("content")} />
-            {noteForm.formState.errors.content ? (
-              <p className="text-xs text-destructive">{noteForm.formState.errors.content.message}</p>
-            ) : null}
-            <Button type="submit" disabled={noteForm.formState.isSubmitting}>
-              {noteForm.formState.isSubmitting ? "Submitting..." : "Add Note"}
-            </Button>
-          </form>
+          {customer.deletedAt ? (
+            <p className="text-sm text-muted-foreground italic border-t pt-4">
+              Cannot add notes to a deleted customer.
+            </p>
+          ) : (
+            <form
+              className="space-y-2 border-t pt-4"
+              onSubmit={noteForm.handleSubmit(async (v) => {
+                const res = await fetch(`/api/customers/${id}/notes`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(v),
+                });
+                if (!res.ok) toast.error("Could not add note");
+                else {
+                  noteForm.reset();
+                  void loadCustomerData();
+                }
+              })}
+            >
+              <Label htmlFor="note">Add New Note</Label>
+              <Textarea id="note" rows={3} placeholder="Enter note content..." {...noteForm.register("content")} />
+              {noteForm.formState.errors.content ? (
+                <p className="text-xs text-destructive">{noteForm.formState.errors.content.message}</p>
+              ) : null}
+              <Button type="submit" disabled={noteForm.formState.isSubmitting}>
+                {noteForm.formState.isSubmitting ? "Submitting..." : "Add Note"}
+              </Button>
+            </form>
+          )}
         </CardContent>
       </Card>
 

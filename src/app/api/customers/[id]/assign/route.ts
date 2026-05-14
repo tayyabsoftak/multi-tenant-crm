@@ -41,8 +41,9 @@ export async function POST(request: Request, context: RouteContext): Promise<Nex
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";
     if (msg === "ASSIGN_LIMIT") {
+      const isSelf = parsed.data.userId === session.user.id;
       return NextResponse.json(
-        { error: "This user already has the maximum number of assigned customers." },
+        { error: isSelf ? "You already have the maximum number of assigned customers." : "This user already has the maximum number of assigned customers." },
         { status: 400 },
       );
     }
