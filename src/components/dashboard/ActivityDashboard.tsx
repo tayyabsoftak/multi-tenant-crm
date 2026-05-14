@@ -115,17 +115,31 @@ export function ActivityDashboard(): React.JSX.Element {
   if (status === "loading") return <FullPageSpinner />;
   if (!admin) return <FullPageSpinner />;
 
+  const today = new Date().toISOString().split("T")[0];
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end">
         <div className="grid gap-2 sm:grid-cols-2">
           <div>
             <Label htmlFor="df">From</Label>
-            <Input id="df" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+            <Input
+              id="df"
+              type="date"
+              max={today}
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
           </div>
           <div>
             <Label htmlFor="dt">To</Label>
-            <Input id="dt" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+            <Input
+              id="dt"
+              type="date"
+              max={today}
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
