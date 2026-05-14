@@ -1,47 +1,43 @@
 import Link from "next/link";
+import { ArrowRight, Box } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 
 export default function Home(): React.JSX.Element {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center gap-10 px-6 py-16">
-      <div className="space-y-3 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Multi-tenant CRM</h1>
-        <p className="text-sm text-muted-foreground">
-          Continue to the app using the routes below.
-        </p>
-      </div>
+    <main className="flex min-h-screen w-full flex-col items-center justify-center bg-background px-4">
+      <div className="mx-auto w-full max-w-[500px] text-center space-y-8">
+        
+        <div className="mx-auto flex size-12 items-center justify-center rounded-xl border bg-card text-foreground shadow-sm">
+          <Box className="size-6" />
+        </div>
+        
+        <div className="space-y-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            Multi-Tenant CRM
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            A production-ready platform for managing customers securely across isolated workspaces.
+          </p>
+        </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="flex flex-col gap-4 border-border/80 bg-card p-6 text-card-foreground shadow-sm">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">Sign in</p>
-            <p className="font-mono text-xs text-muted-foreground">/login</p>
-          </div>
-          <Button asChild className="w-full">
-            <Link href="/login">Open /login</Link>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <Button asChild className="w-full sm:w-auto">
+            <Link href="/register">
+              Create workspace
+              <ArrowRight className="ml-2 size-4" />
+            </Link>
           </Button>
-        </Card>
-
-        <Card className="flex flex-col gap-4 border-border/80 bg-card p-6 text-card-foreground shadow-sm">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">Register</p>
-            <p className="font-mono text-xs text-muted-foreground">/register</p>
-          </div>
-          <Button asChild variant="secondary" className="w-full">
-            <Link href="/register">Open /register</Link>
+          <Button asChild variant="secondary" className="w-full sm:w-auto">
+            <Link href="/login">Sign in</Link>
           </Button>
-        </Card>
-      </div>
+        </div>
 
-      <p className="text-center text-sm text-muted-foreground">
-        After signing in, go to{" "}
-        <Link href="/dashboard" className="font-medium text-primary underline-offset-4 hover:underline">
-          /dashboard
-        </Link>
-        .
-      </p>
+        <div className="border-t pt-8 text-xs text-muted-foreground">
+          Built for the Full Stack Engineer assignment
+        </div>
+
+      </div>
     </main>
   );
 }

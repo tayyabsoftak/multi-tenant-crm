@@ -2,7 +2,6 @@
 
 import { LogOut } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
-import { useTheme } from "next-themes";
 import Link from "next/link";
 
 import { NavLinks } from "@/components/dashboard/NavLinks";
@@ -19,7 +18,6 @@ export function Sidebar({
 }): React.JSX.Element {
   const { data } = useSession();
   const role = data?.user?.role ?? "USER";
-  const { setTheme, resolvedTheme } = useTheme();
 
   return (
     <div className={cn("flex h-full min-h-0 flex-col bg-card", className)}>
