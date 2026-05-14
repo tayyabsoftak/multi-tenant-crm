@@ -22,8 +22,8 @@ export function Sidebar({
   return (
     <div className={cn("flex h-full min-h-0 flex-col bg-card", className)}>
       <div className="flex h-14 shrink-0 items-center border-b px-4">
-        <Link href="/dashboard" className="text-lg font-semibold tracking-tight" onClick={onNavigate}>
-          CRM
+        <Link href="/dashboard" className="truncate text-lg font-bold tracking-tight" onClick={onNavigate}>
+          {data?.user?.organizationName?.toUpperCase() ?? ""}
         </Link>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -49,8 +49,8 @@ export function Sidebar({
 
         {/* Action Links */}
         <div className="space-y-1">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             className="h-9 w-full justify-start gap-3 px-2 text-sm font-medium text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={() => void signOut({ callbackUrl: "/login" })}
           >
