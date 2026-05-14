@@ -1,7 +1,6 @@
+import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
-import { z } from "zod";
 
 import { prisma } from "@/lib/db";
 
@@ -56,9 +55,28 @@ export const authOptions: NextAuthOptions = {
         });
         token.organizationName = org?.name ?? "";
       }
+
+      if (token.sub) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { deletedAt: true },
+        });
+        
+        // If user is completely deleted or soft-deleted, invalidate token
+        if (!dbUser || dbUser.deletedAt !== null) {
+          token.invalid = true;
+        } else {
+          token.invalid = false;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
+      if (token.invalid) {
+        return { expires: session.expires };
+      }
+
       if (session.user) {
         session.user.id = token.sub ?? "";
         session.user.role = (token.role as string | undefined) ?? "USER";
