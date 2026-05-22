@@ -30,7 +30,7 @@ const loginFormSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 
-export function LoginForm(): React.JSX.Element {
+export function RegisterForm(): React.JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
