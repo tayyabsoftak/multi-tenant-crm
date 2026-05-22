@@ -95,7 +95,7 @@ export function CustomerList(): React.JSX.Element {
   const [notes, setNotes] = useState<NoteRow[]>([]);
   const [noteLoading, setNoteLoading] = useState(false);
   const [noteText, setNoteText] = useState("");
-  
+
   const members = useMemo(() => users.filter((u) => u.role === "USER"), [users]);
 
   const fetchCustomers = useCallback(async () => {
@@ -534,15 +534,15 @@ function CustomerFormDialog({
       : { name: values.name, email: values.email, phone: values.phone };
     const res = initial
       ? await fetch(`/api/customers/${initial.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        })
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
       : await fetch("/api/customers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       toast.error((err as { error?: string }).error ?? "Save failed");

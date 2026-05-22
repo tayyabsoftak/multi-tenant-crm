@@ -2,104 +2,94 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-function passwordStrengthScore(password: string): number {
-  let score = 0;
-  if (password.length >= 8) score += 1;
-  if (password.length >= 12) score += 1;
-  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
-  if (/\d/.test(password)) score += 1;
-  if (/[^A-Za-z0-9]/.test(password)) score += 1;
-  return Math.min(score, 5);
-}
+const REMEMBER_EMAIL_KEY = "crm_auth_remember_email";
 
-const registerFormSchema = z
-  .object({
-    name: z.string().min(2, "Name must be at least 2 characters").max(120),
-    email: z.string().min(1, "Email is required").email("Enter a valid email"),
-    organizationName: z.string().min(2, "Organization name is required").max(120),
-    password: z.string().min(8, "At least 8 characters").max(128),
-    confirmPassword: z.string().min(1, "Confirm your password"),
-    acceptTerms: z.boolean().optional(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+const loginFormSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Enter a valid email"),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(8, "At least 8 characters"),
+  remember: z.boolean(),
+});
 
-type RegisterFormValues = z.infer<typeof registerFormSchema>;
+type LoginFormValues = z.infer<typeof loginFormSchema>;
 
-const strengthLabels = ["", "Weak", "Fair", "Good", "Strong", "Excellent"] as const;
-
-export function RegisterForm(): React.JSX.Element {
+export function LoginForm(): React.JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
-  const form = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerFormSchema),
+  const router = useRouter();
+
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
     defaultValues: {
-      name: "",
       email: "",
-      organizationName: "",
       password: "",
-      confirmPassword: "",
-      acceptTerms: false,
+      remember: false,
     },
   });
 
-  const password = form.watch("password");
-  const strength = useMemo(() => passwordStrengthScore(password ?? ""), [password]);
-  const strengthLabel = strengthLabels[strength] ?? "";
+  const { setValue } = form;
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(REMEMBER_EMAIL_KEY);
+
+      if (stored) {
+        setValue("email", stored);
+        setValue("remember", true);
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [setValue]);
 
   const onSubmit = form.handleSubmit(async (values) => {
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: values.name.trim(),
-        email: values.email.trim(),
-        password: values.password,
-        organizationName: values.organizationName.trim(),
-      }),
-    });
-
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
-
-    if (!res.ok) {
-      toast.error(data.error ?? "Registration failed", {
-        description: res.status === 409 ? "Try signing in instead." : "Please check the form and try again.",
-      });
-      return;
+    try {
+      if (values.remember) {
+        localStorage.setItem(
+          REMEMBER_EMAIL_KEY,
+          values.email.trim()
+        );
+      } else {
+        localStorage.removeItem(REMEMBER_EMAIL_KEY);
+      }
+    } catch {
+      // Ignore localStorage errors
     }
 
-    toast.success("Account created", { description: "Signing you in…" });
-
-    const signInResult = await signIn("credentials", {
+    const result = await signIn("credentials", {
       email: values.email.trim(),
       password: values.password,
       callbackUrl: "/dashboard",
       redirect: false,
     });
 
-    if (signInResult?.error) {
-      toast.message("Account ready", { description: "Please sign in with your new credentials." });
+    if (result?.error) {
+      toast.error("Invalid email or password", {
+        description: "Check your credentials and try again.",
+      });
+
       return;
     }
 
-    if (signInResult?.url) {
-      window.location.href = signInResult.url;
+    if (result?.url) {
+      router.push(result.url);
     }
   });
 
@@ -107,148 +97,140 @@ export function RegisterForm(): React.JSX.Element {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-8">
       <Card className="w-full max-w-[420px] border-border/80 bg-card p-6 text-card-foreground shadow-lg sm:p-8">
         <div className="mb-6 space-y-1.5 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Create account</h1>
-          <p className="text-sm text-muted-foreground">New organization — you will be the admin.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Sign in
+          </h1>
+
+          <p className="text-sm text-muted-foreground">
+            Use your work email and password.
+          </p>
         </div>
 
-        <form className="space-y-5" onSubmit={onSubmit} noValidate>
-        <div className="space-y-2">
-          <Label htmlFor="register-name">Full name</Label>
-          <Input
-            id="register-name"
-            autoComplete="name"
-            placeholder="Enter full name"
-            className={cn(form.formState.errors.name && "border-destructive")}
-            {...form.register("name")}
-          />
-          {form.formState.errors.name ? (
-            <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
-          ) : null}
-        </div>
+        <form
+          className="space-y-5"
+          onSubmit={onSubmit}
+          noValidate
+        >
+          {/* Email Field */}
+          <div className="space-y-2">
+            <Label htmlFor="login-email">
+              Email
+            </Label>
 
-        <div className="space-y-2">
-          <Label htmlFor="register-email">Email</Label>
-          <Input
-            id="register-email"
-            type="email"
-            autoComplete="email"
-            placeholder="Enter email address"
-            className={cn(form.formState.errors.email && "border-destructive")}
-            {...form.register("email")}
-          />
-          {form.formState.errors.email ? (
-            <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
-          ) : null}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="register-org">Organization name</Label>
-          <Input
-            id="register-org"
-            autoComplete="organization"
-            placeholder="Enter organization name"
-            className={cn(form.formState.errors.organizationName && "border-destructive")}
-            {...form.register("organizationName")}
-          />
-          {form.formState.errors.organizationName ? (
-            <p className="text-xs text-destructive">{form.formState.errors.organizationName.message}</p>
-          ) : null}
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="register-password">Password</Label>
-            <span className="text-xs text-muted-foreground">{strengthLabel}</span>
-          </div>
-          <div className="relative">
             <Input
-              id="register-password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="Enter strong password"
-              className={cn("pr-10", form.formState.errors.password && "border-destructive")}
-              {...form.register("password")}
+              id="login-email"
+              type="email"
+              autoComplete="email"
+              placeholder="Enter email address"
+              className={cn(
+                form.formState.errors.email &&
+                "border-destructive focus-visible:ring-destructive"
+              )}
+              {...form.register("email")}
             />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="absolute right-0 top-0 h-full rounded-l-none text-muted-foreground"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            </Button>
-          </div>
-          <div className="flex gap-1 pt-0.5" aria-hidden>
-            {[0, 1, 2, 3, 4].map((i) => {
-              const filled = password.length > 0 && strength > i;
-              return (
-                <div
-                  key={i}
-                  className={cn(
-                    "h-1 flex-1 rounded-full bg-muted transition-colors",
-                    filled &&
-                      (strength <= 2
-                        ? "bg-destructive/80"
-                        : strength === 3
-                          ? "bg-primary/80"
-                          : "bg-primary"),
-                  )}
-                />
-              );
-            })}
-          </div>
-          {form.formState.errors.password ? (
-            <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
-          ) : (
-            <p className="text-xs text-muted-foreground">Use 8+ characters with mixed case, numbers, and symbols.</p>
-          )}
-        </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="register-confirm">Confirm password</Label>
-          <div className="relative">
-            <Input
-              id="register-confirm"
-              type={showConfirm ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="Confirm password"
-              className={cn("pr-10", form.formState.errors.confirmPassword && "border-destructive")}
-              {...form.register("confirmPassword")}
+            {form.formState.errors.email ? (
+              <p className="text-xs text-destructive">
+                {form.formState.errors.email.message}
+              </p>
+            ) : null}
+          </div>
+
+          {/* Password Field */}
+          <div className="space-y-2">
+            <Label htmlFor="login-password">
+              Password
+            </Label>
+
+            <div className="relative">
+              <Input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="Enter password"
+                className={cn(
+                  "pr-10",
+                  form.formState.errors.password &&
+                  "border-destructive focus-visible:ring-destructive"
+                )}
+                {...form.register("password")}
+              />
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full rounded-l-none text-muted-foreground hover:text-foreground"
+                onClick={() =>
+                  setShowPassword((prev) => !prev)
+                }
+                aria-label={
+                  showPassword
+                    ? "Hide password"
+                    : "Show password"
+                }
+              >
+                {showPassword ? (
+                  <EyeOff className="size-4" />
+                ) : (
+                  <Eye className="size-4" />
+                )}
+              </Button>
+            </div>
+
+            {form.formState.errors.password ? (
+              <p className="text-xs text-destructive">
+                {form.formState.errors.password.message}
+              </p>
+            ) : null}
+          </div>
+
+          {/* Remember Me */}
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="login-remember"
+              checked={form.watch("remember")}
+              onCheckedChange={(checked) =>
+                form.setValue(
+                  "remember",
+                  checked === true
+                )
+              }
             />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="absolute right-0 top-0 h-full rounded-l-none text-muted-foreground"
-              onClick={() => setShowConfirm((v) => !v)}
-              aria-label={showConfirm ? "Hide password" : "Show password"}
-            >
-              {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            </Button>
-          </div>
-          {form.formState.errors.confirmPassword ? (
-            <p className="text-xs text-destructive">{form.formState.errors.confirmPassword.message}</p>
-          ) : null}
-        </div>
 
-        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Creating account…
-            </>
-          ) : (
-            "Create account"
-          )}
-        </Button>
+            <Label
+              htmlFor="login-remember"
+              className="cursor-pointer text-sm font-normal text-muted-foreground"
+            >
+              Remember me
+            </Label>
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={form.formState.isSubmitting}
+          >
+            {form.formState.isSubmitting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Signing in…
+              </>
+            ) : (
+              "Sign in"
+            )}
+          </Button>
         </form>
 
+        {/* Register Link */}
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link href="/login" className="font-medium text-primary underline-offset-4 hover:underline">
-            Sign in
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/register"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Create one
           </Link>
         </p>
       </Card>
