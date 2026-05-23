@@ -4,92 +4,56 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-
-const REMEMBER_EMAIL_KEY = "crm_auth_remember_email";
-
-const loginFormSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Enter a valid email"),
-  password: z
-    .string()
-    .min(1, "Password is required")
-    .min(8, "At least 8 characters"),
-  remember: z.boolean(),
-});
-
-type LoginFormValues = z.infer<typeof loginFormSchema>;
+import { registerBodySchema, type RegisterBody } from "@/lib/validations/AuthSchema";
 
 export function RegisterForm(): React.JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
-
   const router = useRouter();
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginFormSchema),
+  const form = useForm<RegisterBody>({
+    resolver: zodResolver(registerBodySchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
-      remember: false,
+      organizationName: "",
     },
   });
 
-  const { setValue } = form;
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(REMEMBER_EMAIL_KEY);
-
-      if (stored) {
-        setValue("email", stored);
-        setValue("remember", true);
-      }
-    } catch {
-      // Ignore localStorage errors
-    }
-  }, [setValue]);
-
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      if (values.remember) {
-        localStorage.setItem(
-          REMEMBER_EMAIL_KEY,
-          values.email.trim()
-        );
-      } else {
-        localStorage.removeItem(REMEMBER_EMAIL_KEY);
-      }
-    } catch {
-      // Ignore localStorage errors
-    }
-
-    const result = await signIn("credentials", {
-      email: values.email.trim(),
-      password: values.password,
-      callbackUrl: "/dashboard",
-      redirect: false,
-    });
-
-    if (result?.error) {
-      toast.error("Invalid email or password", {
-        description: "Check your credentials and try again.",
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
       });
 
-      return;
-    }
+      const data = await response.json().catch(() => ({}));
 
-    if (result?.url) {
-      router.push(result.url);
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to register account.");
+      }
+
+      toast.success("Account created successfully!", {
+        description: "Please sign in to continue.",
+      });
+
+      router.push("/login");
+    } catch (error: any) {
+      toast.error("Registration failed", {
+        description: error.message || "Something went wrong. Please try again.",
+      });
     }
   });
 
@@ -98,11 +62,11 @@ export function RegisterForm(): React.JSX.Element {
       <Card className="w-full max-w-[420px] border-border/80 bg-card p-6 text-card-foreground shadow-lg sm:p-8">
         <div className="mb-6 space-y-1.5 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Sign in
+            Create an account
           </h1>
 
           <p className="text-sm text-muted-foreground">
-            Use your work email and password.
+            Get started by entering your details.
           </p>
         </div>
 
@@ -111,14 +75,39 @@ export function RegisterForm(): React.JSX.Element {
           onSubmit={onSubmit}
           noValidate
         >
+          {/* Name Field */}
+          <div className="space-y-2">
+            <Label htmlFor="register-name">
+              Full Name
+            </Label>
+
+            <Input
+              id="register-name"
+              type="text"
+              autoComplete="name"
+              placeholder="Enter your name"
+              className={cn(
+                form.formState.errors.name &&
+                "border-destructive focus-visible:ring-destructive"
+              )}
+              {...form.register("name")}
+            />
+
+            {form.formState.errors.name ? (
+              <p className="text-xs text-destructive">
+                {form.formState.errors.name.message}
+              </p>
+            ) : null}
+          </div>
+
           {/* Email Field */}
           <div className="space-y-2">
-            <Label htmlFor="login-email">
+            <Label htmlFor="register-email">
               Email
             </Label>
 
             <Input
-              id="login-email"
+              id="register-email"
               type="email"
               autoComplete="email"
               placeholder="Enter email address"
@@ -136,17 +125,41 @@ export function RegisterForm(): React.JSX.Element {
             ) : null}
           </div>
 
+          {/* Organization Name Field */}
+          <div className="space-y-2">
+            <Label htmlFor="register-org">
+              Organization Name
+            </Label>
+
+            <Input
+              id="register-org"
+              type="text"
+              placeholder="Enter organization name"
+              className={cn(
+                form.formState.errors.organizationName &&
+                "border-destructive focus-visible:ring-destructive"
+              )}
+              {...form.register("organizationName")}
+            />
+
+            {form.formState.errors.organizationName ? (
+              <p className="text-xs text-destructive">
+                {form.formState.errors.organizationName.message}
+              </p>
+            ) : null}
+          </div>
+
           {/* Password Field */}
           <div className="space-y-2">
-            <Label htmlFor="login-password">
+            <Label htmlFor="register-password">
               Password
             </Label>
 
             <div className="relative">
               <Input
-                id="login-password"
+                id="register-password"
                 type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
+                autoComplete="new-password"
                 placeholder="Enter password"
                 className={cn(
                   "pr-10",
@@ -185,27 +198,6 @@ export function RegisterForm(): React.JSX.Element {
             ) : null}
           </div>
 
-          {/* Remember Me */}
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="login-remember"
-              checked={form.watch("remember")}
-              onCheckedChange={(checked) =>
-                form.setValue(
-                  "remember",
-                  checked === true
-                )
-              }
-            />
-
-            <Label
-              htmlFor="login-remember"
-              className="cursor-pointer text-sm font-normal text-muted-foreground"
-            >
-              Remember me
-            </Label>
-          </div>
-
           {/* Submit Button */}
           <Button
             type="submit"
@@ -215,22 +207,22 @@ export function RegisterForm(): React.JSX.Element {
             {form.formState.isSubmitting ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
-                Signing in…
+                Creating account…
               </>
             ) : (
-              "Sign in"
+              "Create account"
             )}
           </Button>
         </form>
 
-        {/* Register Link */}
+        {/* Login Link */}
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
+          Already have an account?{" "}
           <Link
-            href="/register"
+            href="/login"
             className="font-medium text-primary underline-offset-4 hover:underline"
           >
-            Create one
+            Sign in
           </Link>
         </p>
       </Card>
